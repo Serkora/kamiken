@@ -38,7 +38,7 @@ class Client(object):
 		dtype="__"+dtype[0:4].upper()+"__"		# add dtype header to message
 		
 		print('"',items,'"')
-		for i in range(0,1):	# Посылает 5 раз. Сервер по 1 разу пересылает каждое из сообщений
+		for i in range(1,5):	# Посылает 5 раз. Сервер по 1 разу пересылает каждое из сообщений
 			self.conn.sendto((dtype+str(items)).encode(enc),dest)	# send string
 #			time.sleep(0.2)		# Будет зависать интерфейс. Можно отдельный тред опять...
 		print("-----------")
