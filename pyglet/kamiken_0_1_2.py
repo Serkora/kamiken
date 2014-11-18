@@ -1,14 +1,14 @@
 #!/Library/Frameworks/Python.framework/Versions/3.4/bin/python3.4
 # -*- coding: UTF-8 -*-
 '''
-Kamiken v0.1.1
+Kamiken v0.1.2 (unstable)
 '''
 
 import pyglet
+import sys
 from pyglet.window import mouse
 from pyglet.window import key
 from numpy import zeros
-import sys
 from random import randint
 
 # def trace(frame, event, arg):
@@ -18,11 +18,11 @@ from random import randint
 # sys.settrace(trace)
 
 colors = {   'white'  : (255, 255, 255, 0.3),
-			 'red'	: (255, 0, 0, 0.3),
-			 'blue'   : (0, 0, 255, 0.3),
-			 'board'  : (0.59, 0.54, 0.51, 0.3),
-			 'r_stone': (243, 104, 18, 255),
-			 'b_stone': (14, 193, 225, 255)	  }
+	     'red'    : (255, 0, 0, 0.3),
+	     'blue'   : (0, 0, 255, 0.3),
+	     'board'  : (0.59, 0.54, 0.51, 0.3),
+	     'r_stone': (243, 104, 18, 255),
+	     'b_stone': (14, 193, 225, 255)	  }
 
 '''
 Переменные
@@ -41,7 +41,7 @@ PLAYER = 1.0 #1.0 - red, 2.0 - blue
 '''
 Изображения
 '''
-image   = pyglet.resource.image( 'pics/image5.png'	)
+image   = pyglet.resource.image( 'pics/image5.png'    )
 r_stone = pyglet.resource.image( 'pics/r_stone.png'   )
 b_stone = pyglet.resource.image( 'pics/b_stone.png'   )
 r_point = pyglet.resource.image( 'pics/r_point_2.png' )
@@ -51,25 +51,26 @@ r_board = pyglet.resource.image( 'pics/board_r.png'   )
 b_board = pyglet.resource.image( 'pics/board_b.png'   )
 
 tiles = {	0.0		: board,
-			 1.0		: r_stone,
-			 2.0		: b_stone,
-			 3.0		: r_board,
-			 4.0		: b_board				}
+		1.0		: r_stone,
+		2.0		: b_stone,
+		3.0		: r_board,
+		4.0		: b_board	      }
 
-tilenames = {0.0		: 'board',
-			 1.0		: 'r_stone',
-			 2.0		: 'b_stone',			   	# Для вывода в консоль состояния
-			 3.0		: 'r_point',   				# клетки при клике.
-			 4.0		: 'b_point',
-			 5.0		: 'both'			   }
+tilenames = {   0.0		: 'board',
+		1.0		: 'r_stone',
+		2.0		: 'b_stone',			   	# Для вывода в консоль состояния
+		3.0		: 'r_point',   				# клетки при клике.
+		4.0		: 'b_point',
+		5.0		: 'both'              }
 
-opacity = {  0.0		: BOARD_OPACITY,
-			 1.0		: '255',
-			 2.0		: '255',
-			 3.0		: BOARD_OPACITY*3,
-			 4.0		: BOARD_OPACITY*3				}
+opacity = {     0.0		: BOARD_OPACITY,
+		1.0		: '255',
+		2.0		: '255',
+		3.0		: BOARD_OPACITY*3,
+		4.0		: BOARD_OPACITY*3     }
+		
 player_name = { 1.0 : 'Red one',
-				2.0 : 'Blue one'  }
+		2.0 : 'Blue one'                      }
 
 tilehits = {	(1, 0)	: 3,
 				(1, 3)	: 3,
@@ -89,21 +90,23 @@ ALL_STONES = zeros([BOARD_W, BOARD_H])
 class Board(pyglet.window.Window):
 
 	def __init__(self, WINDOW_W, WINDOW_H, BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT, PLAYER):
-		super(Board, self).__init__(width=WINDOW_W, height=WINDOW_H, caption=('Kamiken player '+str(PLAYER)))
+		super(Board, self).__init__(width=WINDOW_W, 
+		                            height=WINDOW_H, 
+		                            caption=('Kamiken player '+str(PLAYER)))
 		self.player = PLAYER
 		self.batch_launcher = pyglet.graphics.Batch()
 		self.batch = pyglet.graphics.Batch()
 		self.batch_fade = pyglet.graphics.Batch()
 		self.turn = 1
 		self.msg = MSG
-		self.label = pyglet.text.Label(text=self.msg, font_size=TILE_SIZE-10,
-									   anchor_x = 'center',
-									   font_name=FONT,
-									   color=colors['b_stone'],
-									   x = self.width//2,
-									   y = BOARD_H*TILE_SIZE+TILE_SIZE+5,
-									   batch = self.batch
-									   )
+		self.label = pyglet.text.Label(text=self.msg, 
+		                               font_size=TILE_SIZE-10,
+					       anchor_x = 'center',
+					       font_name=FONT,
+					       color=colors['b_stone'],
+					       x = self.width//2,
+					       y = BOARD_H*TILE_SIZE+TILE_SIZE+5,
+					       batch = self.batch)					                      		        )
 		self.lbltext = self.label.text
 		self.fps_display = pyglet.clock.ClockDisplay()
 		self.FADE_X = 0
@@ -138,8 +141,8 @@ class Board(pyglet.window.Window):
 		WINDOW_W_T = self.WIN_W // self.TILE_SIZE
 		WINDOW_H_T = self.WIN_H // self.TILE_SIZE
 		self.fade_stone = pyglet.sprite.Sprite(tiles[self.turn],
-													 self.FADE_X, self.FADE_Y,
-													 batch = self.batch_fade)
+						       self.FADE_X, self.FADE_Y,
+						       batch = self.batch_fade)
 		self.fade_stone.opacity = FADE_STONE_OPACITY
 		
 		for i in range(self.BRD_H):
@@ -150,8 +153,8 @@ class Board(pyglet.window.Window):
 				y_stone = (j+1)*self.TILE_SIZE
 				if self.ALL_STONES[j,i] < 5.0:
 					new_stone = pyglet.sprite.Sprite(tiles[self.ALL_STONES[j,i]],
-													 x_stone, y_stone,
-													 batch = self.batch			 )
+									 x_stone, y_stone,
+									 batch = self.batch         )
 					new_stone.opacity = opacity[self.ALL_STONES[j,i]]
 				if new_stone:
 					stones.append(new_stone)
@@ -207,7 +210,7 @@ class Board(pyglet.window.Window):
 
 	def on_mouse_motion(self, x, y, dx, dy):
 		if (self.TILE_SIZE <= x < self.WIN_W-self.TILE_SIZE) and (self.TILE_SIZE <= y <
-														self.WIN_H-self.TILE_SIZE):
+									  self.WIN_H-self.TILE_SIZE):
 			x1 = x//self.TILE_SIZE - 1
 			y1 = y//self.TILE_SIZE - 1
 			if self.ALL_STONES[y1,x1]%(self.player+2)==0 and self.turn==self.player:
@@ -264,6 +267,6 @@ board.dispatch_event('on_movereceive',board,y,x)
 """
 
 if __name__ == "__main__":
-	window = Board(WINDOW_W, WINDOW_H, BOARD_W, BOARD_H, MSG, TILE_SIZE,
-					FONT, PLAYER)
+	window = Board(WINDOW_W, WINDOW_H, BOARD_W, BOARD_H, 
+	               MSG, TILE_SIZE, FONT, PLAYER)
 	pyglet.app.run()
