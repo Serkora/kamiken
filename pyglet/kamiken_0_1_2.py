@@ -71,6 +71,16 @@ opacity = {  0.0		: BOARD_OPACITY,
 player_name = { 1.0 : 'Red one',
 				2.0 : 'Blue one'  }
 
+tilehits = {	(1, 0)	: 3,
+				(1, 3)	: 3,
+				(1, 4)	: 5,
+				(1, 5)	: 5,
+				(2, 0)	: 4,
+				(2, 3)	: 5,
+				(2, 4)	: 5,
+				(2, 5)	: 5 	}
+
+
 '''
 Поле
 '''
@@ -167,7 +177,7 @@ class Board(pyglet.window.Window):
 					try:
 						if self.ALL_STONES[abs(y1+i),abs(x1+j)]!=pl:
 							x = self.ALL_STONES[abs(y1+i),abs(x1+j)];
-							self.ALL_STONES[abs(y1+i),abs(x1+j)] = ((x*6)%29%(18+pl*3)%(19-pl)%2)*2/pl+pl+2
+							self.ALL_STONES[abs(y1+i),abs(x1+j)] = tilehits[pl,x]
 					except: pass
 		self.turn = self.turn*2%3  # 1->2, 2->1
 		self.FADE_FLAG = False
