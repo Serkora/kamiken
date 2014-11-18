@@ -1,6 +1,6 @@
 # -*- coding: UTF-8 -*-
 
-I = 1
+I = 33
 J = 3
 
 def super_function(I, J): #координаты тайла
@@ -8,7 +8,7 @@ def super_function(I, J): #координаты тайла
     for i in range(I - 1, I + 2):
         for j in range(J - 1, J + 2):
             print(i , j )
-            if i != j and (i - j) % 2 != 0:
+            if (i - j) % 2 == 1:
                 coordinates.append((i, j)) #возвращает четыре пары координат
            
     return(coordinates)            
