@@ -161,22 +161,14 @@ class Board(pyglet.window.Window):
 		уходя на противоположную сторону поля. А мы не в змейку тут играем.
 		Соответственно, пробует проверить все 4 клетки вокруг указанной.
 		'''
-		if self.ALL_STONES[abs(y1-1),x1]!=pl:
-			x = self.ALL_STONES[abs(y1-1),x1];
-			self.ALL_STONES[abs(y1-1),x1] = ((x*6)%29%(18+pl*3)%(19-pl)%2)*2/pl+pl+2
-		if self.ALL_STONES[y1,abs(x1-1)]!=pl:
-			x = self.ALL_STONES[y1,abs(x1-1)];
-			self.ALL_STONES[y1,abs(x1-1)] = ((x*6)%29%(18+pl*3)%(19-pl)%2)*2/pl+pl+2
-		try:
-			if self.ALL_STONES[y1+1,x1]!=pl:
-				x = self.ALL_STONES[y1+1,x1];
-				self.ALL_STONES[y1+1,x1] = ((x*6)%29%(18+pl*3)%(19-pl)%2)*2/pl+pl+2
-		except: pass
-		try:
-			if self.ALL_STONES[y1,x1+1]!=pl:
-				x = self.ALL_STONES[y1,x1+1];
-				self.ALL_STONES[y1,x1+1] = ((x*6)%29%(18+pl*3)%(19-pl)%2)*2/pl+pl+2
-		except: pass
+		for i in range(-1,2):
+			for j in range(-1,2):
+				if i != j and abs(i - j) < 2:
+					try:
+						if self.ALL_STONES[abs(y1+i),abs(x1+j)]!=pl:
+							x = self.ALL_STONES[abs(y1+i),abs(x1+j)];
+							self.ALL_STONES[abs(y1+i),abs(x1+j)] = ((x*6)%29%(18+pl*3)%(19-pl)%2)*2/pl+pl+2
+					except: pass
 		self.turn = self.turn*2%3  # 1->2, 2->1
 		self.FADE_FLAG = False
 		self.label_update()
