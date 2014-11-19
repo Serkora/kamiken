@@ -1,5 +1,5 @@
 #!/Library/Frameworks/Python.framework/Versions/3.4/bin/python3.4
-# -*- coding: UTF-8 -*-
+#  - * -  coding: UTF - 8  - * - 
 '''
 Kamiken v0.1.3
 '''
@@ -33,7 +33,7 @@ TILE_SIZE = 30
 FONT = 'Comic Sans MS'
 WINDOW_W = BOARD_W * TILE_SIZE + 2 * TILE_SIZE
 WINDOW_H = BOARD_H * TILE_SIZE + 2 * TILE_SIZE
-BOARD_OPACITY = 40 #opacity 0-255
+BOARD_OPACITY = 40 #opacity 0 - 255
 FADE_STONE_OPACITY = 150
 PLAYER = 1.0 #1.0 - red, 2.0 - blue
 
@@ -65,8 +65,8 @@ tilenames = {   0.0		: 'board',
 opacity = {     0.0		: BOARD_OPACITY,
 				1.0		: '255',
 				2.0		: '255',
-				3.0		: BOARD_OPACITY*3,
-				4.0		: BOARD_OPACITY*3	}
+				3.0		: BOARD_OPACITY * 3,
+				4.0		: BOARD_OPACITY * 3	}
 		
 player_name = { 1.0 	: 'Red one',
 				2.0 	: 'Blue one'      	}
@@ -119,32 +119,34 @@ class TextWidget(object):
 class Board(pyglet.window.Window):
 
 	def __init__(self, WINDOW_W, WINDOW_H, BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT, PLAYER):
-		super(Board, self).__init__(width=WINDOW_W, 
-		                            height=WINDOW_H, 
-		                            caption=('Kamiken')
+		super(Board, self).__init__(width=WINDOW_W, height=WINDOW_H, caption=('Kamiken'))
 		self.set_fullscreen(eval(config.get('settings','fullscreen')))
-		self.player = PLAYER
 		self.batch_launcher = pyglet.graphics.Batch()
 		self.batch = pyglet.graphics.Batch()
 		self.batch_fade = pyglet.graphics.Batch()
-		self.turn = 1
 		self.msg = MSG
 		self.label = pyglet.text.Label(
-			text=self.msg, font_size=TILE_SIZE-10, anchor_x = 'center',	font_name=FONT,
-			color=colors['b_stone'], x = self.width//2,	y = BOARD_H*TILE_SIZE+TILE_SIZE,
+			text=self.msg, font_size=TILE_SIZE - 10, anchor_x='center', font_name=FONT,
+			color=colors['b_stone'], x=self.width//2, y=self.height - 30,
 			batch = self.batch)
 		self.brdlabel = pyglet.text.Label(
-			"Board size", font_size = 15, anchor_x = "center", font_name = FONT,
-			color = colors['text'], x = self.width/2-40, y = self.height/2 + 50, 
+			"Board size", font_size=15, anchor_x="center", font_name=FONT,
+			color=colors['text'], x=self.width/2 - 40, y=self.height/2 + 50, 
 			batch = self.batch)
-		self.boardtxt = TextWidget(str(BOARD_H), self.width//2+60, self.height//2+41, 
+		self.boardtxt = TextWidget(str(BOARD_H), self.width//2 + 60, self.height//2 + 41, 
 									50, self.batch)
 		self.fps_display = pyglet.clock.ClockDisplay()
 		self.FADE_X = 0
 		self.FADE_Y = 0
 		self.FADE_FLAG = False
 		self.state = "setup" # после коннекта на playing изменяется
+			# Изначальные игровые параметры, которые могут понадобиться до начала игры
+		self.player = 1
+		self.turn = 1
 		self.TILE_SIZE = TILE_SIZE
+		self.BRD_H = BOARD_H
+		self.WIN_W = self.width
+		self.WIN_H = self.height
 
 	def start_game(self):
 		"""
@@ -153,16 +155,31 @@ class Board(pyglet.window.Window):
 		а дальше всё как и раньше.
 		"""
 		boardsize = int(self.boardtxt.document.text)
+		self.boardtxt.layout.delete()
+		self.brdlabel.delete()
 		self.BRD_H = boardsize
 		self.BRD_W = boardsize
-		self.WIN_W = (self.BRD_W+2)*self.TILE_SIZE
-		self.width=self.WIN_W
-		self.WIN_H = (self.BRD_H+2)*self.TILE_SIZE
-		self.height=self.WIN_H
+		self.WIN_W = (self.BRD_W + 2) * self.TILE_SIZE
+		self.WIN_H = (self.BRD_H + 2) * self.TILE_SIZE
+		if not self.fullscreen:
+			self.width=self.WIN_W
+			self.height=self.WIN_H
 		self.ALL_STONES = zeros([self.BRD_W, self.BRD_H])
 		self.dispatch_event('on_reqconnect')
+		self.state = "playing"
+		self.labels_redraw()
 
-		
+	def labels_redraw(self):
+		if hasattr(self, 'label'):
+			self.label.x = self.width//2
+			self.label.y = self.height - 30
+		if hasattr(self, 'boardtxt'):
+			self.boardtxt.layout.x = self.width//2 + 60
+			self.boardtxt.layout.y = self.height//2 + 41
+		if hasattr(self, 'brdlabel'):
+			self.brdlabel.x = self.width/2 - 40
+			self.brdlabel.y = self.height/2 + 50
+		pass
 
 	def on_draw(self):
 		"""
@@ -174,28 +191,27 @@ class Board(pyglet.window.Window):
 		IMG_IN_WINDOW_W = self.width//image.width
 		IMG_IN_WINDOW_H = self.height//image.height
 		if IMG_IN_WINDOW_W == 0:
-			IMG_IN_WINDOW_W += 1
+			IMG_IN_WINDOW_W  += 1
 		if IMG_IN_WINDOW_H == 0:
-			IMG_IN_WINDOW_H += 1
-		for i in range(IMG_IN_WINDOW_W*4-1):
-			for j in range(IMG_IN_WINDOW_H*4-1):
-				image.blit(x=i*image.width, y=j*image.width)
+			IMG_IN_WINDOW_H  += 1
+		for i in range(IMG_IN_WINDOW_W * 4 - 1):
+			for j in range(IMG_IN_WINDOW_H * 4 - 1):
+				image.blit(x=i * image.width, y=j * image.width)
 				
 		if self.state=="playing": self.draw_game()
 		elif self.state=="setup": self.draw_setup()	
 	
 	def draw_game(self):
-		pyglet.gl.glClearColor(*colors['white'])
+		pyglet.gl.glClearColor( * colors['white'])
 		stones = []
 		self.fade_stone = pyglet.sprite.Sprite(tiles[self.turn],
 						       self.FADE_X, self.FADE_Y,
 						       batch = self.batch_fade)
 		self.fade_stone.opacity = FADE_STONE_OPACITY
-		
 		for i in range(self.BRD_H):
 			for j in range(self.BRD_W):
-				x_stone = (i+1)*self.TILE_SIZE
-				y_stone = (j+1)*self.TILE_SIZE
+				x_stone = (i + 1) * self.TILE_SIZE
+				y_stone = (j + 1) * self.TILE_SIZE
 				if self.ALL_STONES[j,i] < 5.0:
 					new_stone = pyglet.sprite.Sprite(tiles[self.ALL_STONES[j,i]],
 									 x_stone, y_stone,
@@ -207,14 +223,14 @@ class Board(pyglet.window.Window):
 			self.batch_fade.draw()
 
 	def draw_setup(self):
-		xp1 = self.width//2-self.TILE_SIZE*4
+		xp1 = self.width//2 - self.TILE_SIZE * 4
 		yp1 = self.height//3
-		xp2 = self.width//2+self.TILE_SIZE
+		xp2 = self.width//2 + self.TILE_SIZE
 		yp2 = self.height//3
-		pl1 = pyglet.sprite.Sprite(tiles[abs(self.player-2)], xp1, yp1, batch = self.batch)
-		pl2 = pyglet.sprite.Sprite(tiles[self.player*2-2], xp2, yp2, batch = self.batch)
+		pl1 = pyglet.sprite.Sprite(tiles[abs(self.player - 2)], xp1, yp1, batch = self.batch)
+		pl2 = pyglet.sprite.Sprite(tiles[self.player * 2 - 2], xp2, yp2, batch = self.batch)
 		pl1.scale = 3; pl2.scale = 3
-		if abs(self.player-2)==1: pl2.opacity=50
+		if abs(self.player - 2)==1: pl2.opacity=50
 		else: pl1.opacity = 50
 		self.batch.draw()
 		pass
@@ -223,21 +239,21 @@ class Board(pyglet.window.Window):
 		if self.turn!=pl:	return		# Если повторный вызов функции (5 одинаковых 
 										# сообщений же клиент получет), то мгновенный выход
 		self.ALL_STONES[y1,x1]=pl
-		for i in range(-1,2):
-			for j in range(-1,2):
+		for i in range( - 1,2):
+			for j in range( - 1,2):
 				if abs(i - j) == 1:
 					try:
-						if self.ALL_STONES[abs(y1+i),abs(x1+j)]!=pl:
-							x = self.ALL_STONES[abs(y1+i),abs(x1+j)];
-							self.ALL_STONES[abs(y1+i),abs(x1+j)] = tilehits[pl,x]
+						if self.ALL_STONES[abs(y1 + i),abs(x1 + j)]!=pl:
+							x = self.ALL_STONES[abs(y1 + i),abs(x1 + j)];
+							self.ALL_STONES[abs(y1 + i),abs(x1 + j)] = tilehits[pl,x]
 					except: pass
-		self.turn = self.turn*2%3  # 1->2, 2->1
+		self.turn = self.turn * 2%3  # 1 - >2, 2 - >1
 		self.FADE_FLAG = False
 		self.label_update()
 		
 	def on_movereceive(event,self,player,x,y):
 		"""
-		'self' стоит не первым из-за того, что событие вызывается извне и сам класс
+		'self' стоит не первым из - за того, что событие вызывается извне и сам класс
 		доски вообще в явном виде передаётся при создании события.
 		"""
 		if player==0:
@@ -252,30 +268,22 @@ class Board(pyglet.window.Window):
 				self.boardtxt.focus = None
 				self.boardtxt.caret.visible = False
 			
-			xp1 = self.width//2-self.TILE_SIZE*4
+			xp1 = self.width//2 - self.TILE_SIZE * 4
 			yp1 = self.height//3
-			xp2 = self.width//2+self.TILE_SIZE
+			xp2 = self.width//2 + self.TILE_SIZE
 			yp2 = self.height//3
 			
-			if xp1+8 < x < xp1+self.TILE_SIZE*2.7 and yp1 < y < yp1+self.TILE_SIZE*2.7:
+			if xp1 + 8 < x < xp1 + self.TILE_SIZE * 2.7 and yp1 < y < yp1 + self.TILE_SIZE * 2.7:
 				self.start_game()
-				self.player = 1
-				self.state="playing"
-				self.brdlabel.delete()
-				self.boardtxt.layout.delete()
-			if xp2+8 < x < xp2+self.TILE_SIZE*2.7 and yp2 < y < yp2+self.TILE_SIZE*2.7:
+			if xp2 + 8 < x < xp2 + self.TILE_SIZE * 2.7 and yp2 < y < yp2 + self.TILE_SIZE * 2.7:
 				self.start_game()
-				self.player = 2
-				self.state="playing"
-				self.brdlabel.delete()
-				self.boardtxt.layout.delete()
 				self.msg = "Waiting for second player..."
 			
 		elif button == mouse.LEFT and self.state=="playing":
 			x1 = x//self.TILE_SIZE - 1
 			y1 = y//self.TILE_SIZE - 1
 			if 0 <= y1 < self.BRD_H and 0 <= x1 < self.BRD_W:
-				if self.ALL_STONES[y1,x1]%(self.player+2)==0 and self.turn==self.player:
+				if self.ALL_STONES[y1,x1]%(self.player + 2)==0 and self.turn==self.player:
 					self.make_move(x1,y1,self.player)
 					self.dispatch_event('on_mademove',self.player,x1,y1) # создаётся ивент, который
 					# при наличии сетевого клиента перехватывается и высылает ход на сервер.
@@ -283,28 +291,28 @@ class Board(pyglet.window.Window):
 
 	def on_mouse_motion(self, x, y, dx, dy):
 		if self.state == "setup":
-			xp1 = self.width//2-self.TILE_SIZE*4
+			xp1 = self.width//2 - self.TILE_SIZE * 4
 			yp1 = self.height//3
-			xp2 = self.width//2+self.TILE_SIZE
+			xp2 = self.width//2 + self.TILE_SIZE
 			yp2 = self.height//3		
-			if xp1+8 < x < xp1+self.TILE_SIZE*2.7 and yp1 < y < yp1+self.TILE_SIZE*2.7:
+			if xp1 + 8 < x < xp1 + self.TILE_SIZE * 2.7 and yp1 < y < yp1 + self.TILE_SIZE * 2.7:
 				self.player = 1
-			if xp2+8 < x < xp2+self.TILE_SIZE*2.7 and yp2 < y < yp2+self.TILE_SIZE*2.7:
+			if xp2 + 8 < x < xp2 + self.TILE_SIZE * 2.7 and yp2 < y < yp2 + self.TILE_SIZE * 2.7:
 				self.player = 2
 	
-		elif (self.TILE_SIZE <= x < self.WIN_W-self.TILE_SIZE) and (self.TILE_SIZE <= y <
-									  self.WIN_H-self.TILE_SIZE):
+		elif (self.TILE_SIZE <= x < self.WIN_W - self.TILE_SIZE) and (self.TILE_SIZE <= y <
+									  self.WIN_H - self.TILE_SIZE):
 			x1 = x//self.TILE_SIZE - 1
 			y1 = y//self.TILE_SIZE - 1
-			if self.ALL_STONES[y1,x1]%(self.player+2)==0 and self.turn==self.player:
+			if self.ALL_STONES[y1,x1]%(self.player + 2)==0 and self.turn==self.player:
 				'''
 			Остаток от деления на номер игрока. Так что рисует только поверх пустой
-			или битой собой клетки. Для второго игрока это (0%(2+2) = 0, 4%(2+2) = 0), а для
-			первого - (0%(1+2) = 0, 3%(1+2) = 0. Деление любых других чисел на (игрок+2)
+			или битой собой клетки. Для второго игрока это (0%(2 + 2) = 0, 4%(2 + 2) = 0), а для
+			первого - (0%(1 + 2) = 0, 3%(1 + 2) = 0. Деление любых других чисел на (игрок + 2)
 			будут иметь остаток.
 				'''
-				self.FADE_X = (x1+1) * TILE_SIZE
-				self.FADE_Y = (y1+1) * TILE_SIZE
+				self.FADE_X = (x1 + 1) * TILE_SIZE
+				self.FADE_Y = (y1 + 1) * TILE_SIZE
 				self.FADE_FLAG = True
 		self.clear()
 	
@@ -329,16 +337,21 @@ class Board(pyglet.window.Window):
 			self.close()
 		if symbol == key.RETURN:
 			self.set_fullscreen(self.fullscreen^True)
+			self.labels_redraw()
+			if not self.fullscreen:
+				self.width=self.WIN_W
+				self.height=self.WIN_H
 		if symbol == key.C and modifiers and key.MOD_SHIFT:
 			self.dispatch_event('on_reqconnect')
 			self.msg = "Waiting for second player..."
-		if symbol == key.Q and key.MOD_SHIFT: 	# Для аутизм-режима
-			self.player = self.player*2%3
-		if symbol == key.T and key.MOD_SHIFT:	# тесты-хуесты. Для смены размера поля
+		if symbol == key.Q and key.MOD_SHIFT: 	# Для аутизм - режима
+			self.player = self.player * 2%3
+		if symbol == key.T and key.MOD_SHIFT:	# тесты - хуесты. Для смены размера поля
 #			self.ALL_STONES = zeros([5, 5])		# нужно изменять диапазоны for лупов,
-			self.width=self.width/2				# и проверки on_mouse_motion, чтобы
-												# не выдавало ошибок при наведении на
-												# убранные клетки, индексов которых уже нет
+			pass								# и проверки on_mouse_motion, чтобы
+			print(self.brdlabel.x)				# не выдавало ошибок при наведении на
+			del self.brdlabel					# убранные клетки, индексов которых уже нет
+
 
 	def label_update(self):
 		if self.turn==self.player:
