@@ -10,25 +10,23 @@ from pyglet.window import mouse
 from pyglet.window import key
 from numpy import zeros
 from random import randint
+from configparser import ConfigParser
 
-# def trace(frame, event, arg):
-#     print ("%s, %s:%d" % (event, frame.f_code.co_filename, frame.f_lineno))
-#     return trace
-# 
-# sys.settrace(trace)
+config = ConfigParser()
+config.readfp(open("config.ini"))
 
-colors = {   'white'  : (255, 255, 255, 0.3),
-	     'red'    : (255, 0, 0, 0.3),
-	     'blue'   : (0, 0, 255, 0.3),
-	     'board'  : (0.59, 0.54, 0.51, 0.3),
-	     'r_stone': (243, 104, 18, 255),
-	     'b_stone': (14, 193, 225, 255)	  }
+colors = {	'white'  : (255, 255, 255, 0.3),
+	     	'red'    : (255, 0, 0, 0.3),
+	     	'blue'   : (0, 0, 255, 0.3),
+	     	'board'  : (0.59, 0.54, 0.51, 0.3),
+	     	'r_stone': (243, 104, 18, 255),
+	     	'b_stone': (14, 193, 225, 255)	  }
 
 '''
 Переменные
 '''
-BOARD_W = 20
-BOARD_H = BOARD_W
+BOARD_W = int(config.get('settings','board_size_w'))
+BOARD_H = int(config.get('settings','board_size_h'))
 MSG = 'Press SHIFT+C to connect to server'
 TILE_SIZE = 30
 FONT = 'Comic Sans MS'
@@ -41,34 +39,36 @@ PLAYER = 1.0 #1.0 - red, 2.0 - blue
 '''
 Изображения
 '''
-image   = pyglet.resource.image( 'pics/image5.png'    )
-board   = pyglet.resource.image( 'pics/board_5.png'   )
-r_stone = pyglet.resource.image( 'pics/r_stone.png'   )
-b_stone = pyglet.resource.image( 'pics/b_stone.png'   )
-r_board = pyglet.resource.image( 'pics/board_r.png'   )
-b_board = pyglet.resource.image( 'pics/board_b.png'   )
+image   = pyglet.resource.image( config.get('images','background')	)
+board   = pyglet.resource.image( config.get('images','board')	)
+r_stone = pyglet.resource.image( config.get('images','red_stone')	)
+b_stone = pyglet.resource.image( config.get('images','blue_stone')	)
+r_board = pyglet.resource.image( config.get('images','red_board')	)
+b_board = pyglet.resource.image( config.get('images','blue_board')	)
+#r_point = pyglet.resource.image( config.get('images','red_point')	)
+#b_point = pyglet.resource.image( config.get('images','blue_point')	)
 
-tiles = {	0.0		: board,
-		1.0		: r_stone,
-		2.0		: b_stone,
-		3.0		: r_board,
-		4.0		: b_board	      }
+tiles = {		0.0		: board,
+				1.0		: r_stone,
+				2.0		: b_stone,
+				3.0		: r_board,
+				4.0		: b_board	     	}
 
 tilenames = {   0.0		: 'board',
-		1.0		: 'r_stone',
-		2.0		: 'b_stone',			   	# Для вывода в консоль состояния
-		3.0		: 'r_point',   				# клетки при клике.
-		4.0		: 'b_point',
-		5.0		: 'both'              }
+				1.0		: 'r_stone',
+				2.0		: 'b_stone',			   	# Для вывода в консоль состояния
+				3.0		: 'r_point',   				# клетки при клике.
+				4.0		: 'b_point',
+				5.0		: 'both'      		}
 
 opacity = {     0.0		: BOARD_OPACITY,
-		1.0		: '255',
-		2.0		: '255',
-		3.0		: BOARD_OPACITY*3,
-		4.0		: BOARD_OPACITY*3     }
+				1.0		: '255',
+				2.0		: '255',
+				3.0		: BOARD_OPACITY*3,
+				4.0		: BOARD_OPACITY*3	}
 		
-player_name = { 1.0 : 'Red one',
-		2.0 : 'Blue one'                      }
+player_name = { 1.0 	: 'Red one',
+				2.0 	: 'Blue one'      	}
 
 tilehits = {	(1, 0)	: 3,
 				(1, 3)	: 3,
@@ -77,7 +77,7 @@ tilehits = {	(1, 0)	: 3,
 				(2, 0)	: 4,
 				(2, 3)	: 5,
 				(2, 4)	: 4,
-				(2, 5)	: 5 	}
+				(2, 5)	: 5 		  		}
 				
 '''
 Поле
@@ -89,28 +89,27 @@ class Board(pyglet.window.Window):
 	def __init__(self, WINDOW_W, WINDOW_H, BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT, PLAYER):
 		super(Board, self).__init__(width=WINDOW_W, 
 		                            height=WINDOW_H, 
-		                            caption=('Kamiken player '+str(PLAYER)))
+		                            caption=('Kamiken player '+player_name[PLAYER]))
+		self.set_fullscreen(eval(config.get('settings','fullscreen')))
 		self.player = PLAYER
 		self.batch_launcher = pyglet.graphics.Batch()
 		self.batch = pyglet.graphics.Batch()
 		self.batch_fade = pyglet.graphics.Batch()
 		self.turn = 1
-	#	self.msg = MSG #self.msg == self.lbltxt? text = MSG
-		self.label = pyglet.text.Label('''text=self.msg,'''text=MSG, 
+		self.msg = MSG
+		self.label = pyglet.text.Label(text=self.msg, 
 		                               font_size=TILE_SIZE-10,
-					       anchor_x = 'center',
-					       font_name=FONT,
-					       color=colors['b_stone'],
-					       x = self.width//2,
-					       y = BOARD_H*TILE_SIZE+TILE_SIZE+5,
-					       batch = self.batch)					                      		        )
+					       				anchor_x = 'center',
+					       				font_name=FONT,
+					       				color=colors['b_stone'],
+					       				x = self.width//2,
+					       				y = BOARD_H*TILE_SIZE+TILE_SIZE+5,
+					       				batch = self.batch)
 		self.lbltext = self.label.text
 		self.fps_display = pyglet.clock.ClockDisplay()
 		self.FADE_X = 0
 		self.FADE_Y = 0
 		self.FADE_FLAG = False
-#		self.dispatch_event('on_reqconnect')
-#		self.label_update()
 		self.state = "starting" # после коннекта на playing изменяется
 			# окно/доска
 		self.WIN_W = WINDOW_W
@@ -122,9 +121,9 @@ class Board(pyglet.window.Window):
 		
 
 	def on_draw(self):
-		self.label.text = self.lbltext
-		pyglet.gl.glClearColor(*colors['white'])
 		self.clear()
+		self.label.text = self.msg
+		pyglet.gl.glClearColor(*colors['white'])
 		IMG_IN_WINDOW_W = self.width//image.width
 		IMG_IN_WINDOW_H = self.height//image.height
 		if IMG_IN_WINDOW_W == 0:
@@ -228,7 +227,7 @@ class Board(pyglet.window.Window):
 			self.set_fullscreen(self.fullscreen^True)
 		if symbol == key.C and modifiers and key.MOD_SHIFT:
 			self.dispatch_event('on_reqconnect')
-			self.lbltext = "Waiting"
+			self.msg = "Waiting"
 		if symbol == key.Q and key.MOD_SHIFT: 	# Для аутизм-режима
 			self.player = self.player*2%3
 		if symbol == key.T and key.MOD_SHIFT:	# тесты-хуесты. Для смены размера поля
@@ -239,11 +238,9 @@ class Board(pyglet.window.Window):
 
 	def label_update(self):
 		if self.turn==self.player:
-			label_msg = 'Your move!'
+			self.msg = 'Your move!'
 		else:
-			label_msg = "Opponent's move!"
-		self.lbltext = label_msg
-#		self.clear()
+			self.msg = "Opponent's move!"
 
 Board.register_event_type('on_mademove')
 Board.register_event_type('on_movereceive')
