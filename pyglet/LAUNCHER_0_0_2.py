@@ -8,7 +8,7 @@
 pyglet.app.run тоже нужно импортировать в ланчере, так как иначе он не знает этой команды.
 """
 
-from kamiken_0_1_2 import Board, WINDOW_W, WINDOW_H, BOARD_W, BOARD_H, \
+from kamiken_0_1_3 import Board, WINDOW_W, WINDOW_H, BOARD_W, BOARD_H, \
 									MSG, TILE_SIZE, FONT
 
 from CLIENT_0_0_2 import Client

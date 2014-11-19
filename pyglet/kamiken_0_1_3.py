@@ -160,6 +160,8 @@ class Board(pyglet.window.Window):
 		self.WIN_H = (self.BRD_H+2)*self.TILE_SIZE
 		self.height=self.WIN_H
 		self.ALL_STONES = zeros([self.BRD_W, self.BRD_H])
+		self.dispatch_event('on_reqconnect')
+
 		
 
 	def on_draw(self):
@@ -267,6 +269,7 @@ class Board(pyglet.window.Window):
 				self.state="playing"
 				self.brdlabel.delete()
 				self.boardtxt.layout.delete()
+				self.msg = "Waiting for second player..."
 			
 		elif button == mouse.LEFT and self.state=="playing":
 			x1 = x//self.TILE_SIZE - 1
@@ -328,9 +331,7 @@ class Board(pyglet.window.Window):
 			self.set_fullscreen(self.fullscreen^True)
 		if symbol == key.C and modifiers and key.MOD_SHIFT:
 			self.dispatch_event('on_reqconnect')
-			self.state="playing"
-			self.label_update()
-#			self.msg = "Waiting for second player..."
+			self.msg = "Waiting for second player..."
 		if symbol == key.Q and key.MOD_SHIFT: 	# Для аутизм-режима
 			self.player = self.player*2%3
 		if symbol == key.T and key.MOD_SHIFT:	# тесты-хуесты. Для смены размера поля

@@ -328,9 +328,7 @@ class Board(pyglet.window.Window):
 			self.set_fullscreen(self.fullscreen^True)
 		if symbol == key.C and modifiers and key.MOD_SHIFT:
 			self.dispatch_event('on_reqconnect')
-			self.state="playing"
-			self.label_update()
-#			self.msg = "Waiting for second player..."
+			self.msg = "Waiting for second player..."
 		if symbol == key.Q and key.MOD_SHIFT: 	# Для аутизм-режима
 			self.player = self.player*2%3
 		if symbol == key.T and key.MOD_SHIFT:	# тесты-хуесты. Для смены размера поля
