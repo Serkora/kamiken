@@ -1,4 +1,4 @@
-#!/Library/Frameworks/Python.framework/Versions/3.4/bin/python3.4
+﻿#!/Library/Frameworks/Python.framework/Versions/3.4/bin/python3.4
 # -*- coding: UTF-8 -*-
 
 import socket
@@ -10,7 +10,7 @@ from random import randint
 #serverip = '54.68.244.173'
 serverport = 9009
 serverip = '127.0.0.1'
-myip = '25.64.15.244'
+myip = '127.0.0.1'
 myport = randint(8000,9000)
 enc = 'utf-8'
 
