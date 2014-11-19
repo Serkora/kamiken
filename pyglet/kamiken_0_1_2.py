@@ -105,7 +105,6 @@ class Board(pyglet.window.Window):
 					       				x = self.width//2,
 					       				y = BOARD_H*TILE_SIZE+TILE_SIZE+5,
 					       				batch = self.batch)
-		self.lbltext = self.label.text
 		self.fps_display = pyglet.clock.ClockDisplay()
 		self.FADE_X = 0
 		self.FADE_Y = 0
