@@ -121,7 +121,7 @@ class Board(pyglet.window.Window):
 	def __init__(self, WINDOW_W, WINDOW_H, BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT, PLAYER):
 		super(Board, self).__init__(width=WINDOW_W, 
 		                            height=WINDOW_H, 
-		                            caption=('Kamiken player '+player_name[PLAYER]))
+		                            caption=('Kamiken')
 		self.set_fullscreen(eval(config.get('settings','fullscreen')))
 		self.player = PLAYER
 		self.batch_launcher = pyglet.graphics.Batch()
