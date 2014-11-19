@@ -7,9 +7,9 @@ from threading import Thread
 from random import randint
 
 
-#serverip = '54.68.244.173'
+serverip = '54.68.244.173'
 serverport = 9009
-serverip = '127.0.0.1'
+#serverip = '127.0.0.1'
 myip = '127.0.0.1'
 myport = randint(8000,9000)
 enc = 'utf-8'
