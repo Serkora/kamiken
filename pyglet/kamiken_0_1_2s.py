@@ -109,7 +109,7 @@ class Board(pyglet.window.Window):
 		self.FADE_X = 0
 		self.FADE_Y = 0
 		self.FADE_FLAG = False
-		self.state = "starting" # после коннекта на playing изменяется
+		self.state = "setup" # после коннекта на playing изменяется
 			# окно/доска
 		self.WIN_W = WINDOW_W
 		self.WIN_H = WINDOW_H
@@ -120,9 +120,12 @@ class Board(pyglet.window.Window):
 		
 
 	def on_draw(self):
+		"""
+		Фоновая картина и лейбл рисуются всегда. Дальше, в зависимости от состояния,
+		будет вызываться либо функция прорисовки игры, либо функция прорисовки меню.
+		"""
 		self.clear()
 		self.label.text = self.msg
-		pyglet.gl.glClearColor(*colors['white'])
 		IMG_IN_WINDOW_W = self.width//image.width
 		IMG_IN_WINDOW_H = self.height//image.height
 		if IMG_IN_WINDOW_W == 0:
@@ -132,6 +135,21 @@ class Board(pyglet.window.Window):
 		for i in range(IMG_IN_WINDOW_W*4-1):
 			for j in range(IMG_IN_WINDOW_H*4-1):
 				image.blit(x=i*image.width, y=j*image.width)
+				
+		if self.state=="playing": self.draw_game()
+		elif self.state=="setup": self.draw_setup()	
+	
+	def draw_game(self):
+		pyglet.gl.glClearColor(*colors['white'])
+# 		IMG_IN_WINDOW_W = self.width//image.width
+# 		IMG_IN_WINDOW_H = self.height//image.height
+# 		if IMG_IN_WINDOW_W == 0:
+# 			IMG_IN_WINDOW_W += 1
+# 		if IMG_IN_WINDOW_H == 0:
+# 			IMG_IN_WINDOW_H += 1
+# 		for i in range(IMG_IN_WINDOW_W*4-1):
+# 			for j in range(IMG_IN_WINDOW_H*4-1):
+# 				image.blit(x=i*image.width, y=j*image.width)
 		stones = []
 		WINDOW_W_T = self.WIN_W // self.TILE_SIZE
 		WINDOW_H_T = self.WIN_H // self.TILE_SIZE
@@ -156,21 +174,18 @@ class Board(pyglet.window.Window):
 		if self.FADE_FLAG:
 			self.batch_fade.draw()
 
+	def draw_setup(self):
+		self.msg = "shift-c нажми"
+		self.batch.draw()
+		pass
+		
 	def make_move(self,x1,y1,pl):
 		if self.turn!=pl:	return		# Если повторный вызов функции (5 одинаковых 
-										# сообщений же), то мгновенный выход
+										# сообщений же клиент получет), то мгновенный выход
 		self.ALL_STONES[y1,x1]=pl
-		'''
-		Ебанутая операция присвоения клетке значения позволяет одинаковым
-		действием перейти от нуля к 3 или 4 в зависимости от игрока,
-		а также от 3 и 4 к 5, опять же в зависимости от игрока. Из 5 делает 5.
-		Парочка abs() нужна из-за восможности питона иметь отрицательные индексы,
-		уходя на противоположную сторону поля. А мы не в змейку тут играем.
-		Соответственно, пробует проверить все 4 клетки вокруг указанной.
-		'''
 		for i in range(-1,2):
 			for j in range(-1,2):
-				if i != j and abs(i - j) < 2:
+				if abs(i - j) == 1:
 					try:
 						if self.ALL_STONES[abs(y1+i),abs(x1+j)]!=pl:
 							x = self.ALL_STONES[abs(y1+i),abs(x1+j)];
@@ -185,7 +200,7 @@ class Board(pyglet.window.Window):
 			
 			x1 = x//TILE_SIZE - 1
 			y1 = y//TILE_SIZE - 1
-			if 0 <= y1 <= self.BRD_H and 0 <= x1 <= self.BRD_W:
+			if 0 <= y1 < self.BRD_H and 0 <= x1 < self.BRD_W:
 				if self.ALL_STONES[y1,x1]%(self.player+2)==0 and self.turn==self.player:
 					self.make_move(x1,y1,self.player)
 					self.dispatch_event('on_mademove',self.player,x1,y1) # создаётся ивент, который
@@ -226,7 +241,9 @@ class Board(pyglet.window.Window):
 			self.set_fullscreen(self.fullscreen^True)
 		if symbol == key.C and modifiers and key.MOD_SHIFT:
 			self.dispatch_event('on_reqconnect')
-			self.msg = "Waiting"
+			self.state="playing"
+			self.label_update()
+#			self.msg = "Waiting for second player..."
 		if symbol == key.Q and key.MOD_SHIFT: 	# Для аутизм-режима
 			self.player = self.player*2%3
 		if symbol == key.T and key.MOD_SHIFT:	# тесты-хуесты. Для смены размера поля
