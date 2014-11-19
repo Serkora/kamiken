@@ -42,11 +42,9 @@ PLAYER = 1.0 #1.0 - red, 2.0 - blue
 Изображения
 '''
 image   = pyglet.resource.image( 'pics/image5.png'    )
+board   = pyglet.resource.image( 'pics/board_5.png'   )
 r_stone = pyglet.resource.image( 'pics/r_stone.png'   )
 b_stone = pyglet.resource.image( 'pics/b_stone.png'   )
-r_point = pyglet.resource.image( 'pics/r_point_2.png' )
-b_point = pyglet.resource.image( 'pics/b_point_2.png' )
-board   = pyglet.resource.image( 'pics/board_5.png'   )
 r_board = pyglet.resource.image( 'pics/board_r.png'   )
 b_board = pyglet.resource.image( 'pics/board_b.png'   )
 
@@ -97,8 +95,8 @@ class Board(pyglet.window.Window):
 		self.batch = pyglet.graphics.Batch()
 		self.batch_fade = pyglet.graphics.Batch()
 		self.turn = 1
-		self.msg = MSG
-		self.label = pyglet.text.Label(text=self.msg, 
+	#	self.msg = MSG #self.msg == self.lbltxt? text = MSG
+		self.label = pyglet.text.Label('''text=self.msg,'''text=MSG, 
 		                               font_size=TILE_SIZE-10,
 					       anchor_x = 'center',
 					       font_name=FONT,
@@ -146,8 +144,8 @@ class Board(pyglet.window.Window):
 		
 		for i in range(self.BRD_H):
 			for j in range(self.BRD_W):
-				new_stone1 = False
-				new_stone = False
+			#	new_stone1 = False
+			#	new_stone = False
 				x_stone = (i+1)*self.TILE_SIZE
 				y_stone = (j+1)*self.TILE_SIZE
 				if self.ALL_STONES[j,i] < 5.0:
@@ -155,7 +153,6 @@ class Board(pyglet.window.Window):
 									 x_stone, y_stone,
 									 batch = self.batch         )
 					new_stone.opacity = opacity[self.ALL_STONES[j,i]]
-				if new_stone:
 					stones.append(new_stone)
 		self.batch.draw()
 		if self.FADE_FLAG:
