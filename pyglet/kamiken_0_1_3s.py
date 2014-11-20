@@ -118,7 +118,16 @@ class TextWidget(object):
 
 class Board(pyglet.window.Window):
 
-	def __init__(self, WINDOW_W, WINDOW_H, BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT, PLAYER):
+	def __init__(self, BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT):
+			# Изначальные игровые параметры, которые могут понадобиться до начала игры
+		self.player = 1
+		self.turn = 1
+		self.TILE_SIZE = TILE_SIZE
+		self.BRD_H = BOARD_H
+		self.BRD_W = BOARD_W
+		self.WIN_W = (self.BRD_W+2)*self.TILE_SIZE
+		self.WIN_H = (self.BRD_H+2)*self.TILE_SIZE
+			# окно, лейблы и т.д.
 		super(Board, self).__init__(width=WINDOW_W, height=WINDOW_H, caption=('Kamiken'))
 		self.set_fullscreen(eval(config.get('settings','fullscreen')))
 		self.batch_launcher = pyglet.graphics.Batch()
@@ -140,13 +149,7 @@ class Board(pyglet.window.Window):
 		self.FADE_Y = 0
 		self.FADE_FLAG = False
 		self.state = "setup" # после коннекта на playing изменяется
-			# Изначальные игровые параметры, которые могут понадобиться до начала игры
-		self.player = 1
-		self.turn = 1
-		self.TILE_SIZE = TILE_SIZE
-		self.BRD_H = BOARD_H
-		self.WIN_W = self.width
-		self.WIN_H = self.height
+
 
 	def start_game(self):
 		"""
@@ -377,6 +380,5 @@ board.dispatch_event('on_movereceive',board,y,x)
 """
 
 if __name__ == "__main__":
-	window = Board(WINDOW_W, WINDOW_H, BOARD_W, BOARD_H, 
-	               MSG, TILE_SIZE, FONT, PLAYER)
+	window = Board(BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT)
 	pyglet.app.run()
