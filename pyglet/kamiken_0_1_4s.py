@@ -6,6 +6,7 @@ Kamiken v0.1.3
 
 import pyglet
 import sys
+from pyglet.gl import *
 from pyglet.window import mouse
 from pyglet.window import key
 from numpy import zeros
@@ -48,6 +49,7 @@ r_board = pyglet.resource.image( config.get('images','red_board')	)
 b_board = pyglet.resource.image( config.get('images','blue_board')	)
 #r_point = pyglet.resource.image( config.get('images','red_point')	)
 #b_point = pyglet.resource.image( config.get('images','blue_point')	)
+
 
 tiles = {		0.0		: board,
 				1.0		: r_stone,
@@ -230,6 +232,8 @@ class Board(pyglet.window.Window):
 		yp1 = self.height//3
 		xp2 = self.width//2 + self.TILE_SIZE
 		yp2 = self.height//3
+		texture_set_mag_filter_nearest( r_stone.get_texture() )
+		texture_set_mag_filter_nearest( b_stone.get_texture() )
 		pl1 = pyglet.sprite.Sprite(tiles[abs(self.player - 2)], xp1, yp1, batch = self.batch)
 		pl2 = pyglet.sprite.Sprite(tiles[self.player * 2 - 2], xp2, yp2, batch = self.batch)
 		pl1.scale = 3; pl2.scale = 3
@@ -368,6 +372,8 @@ class Board(pyglet.window.Window):
 			self.msg = 'Your move!'
 		else:
 			self.msg = "Opponent's move!"
+	
+
 
 Board.register_event_type('on_mademove')
 Board.register_event_type('on_movereceive')
@@ -385,7 +391,12 @@ board.dispatch_event('on_movereceive',board,y,x)
 Которое объектом класса Board ловится, обновляется матрица, рисуется поле. 'board'
 нужно передавать, чтобы можно было в этой функции использовать классовые методы.
 """
+def texture_set_mag_filter_nearest( texture ): #функция, преобразующая изображение в текстуру OpenGL со всякими фильтрами
+	glBindTexture( texture.target, texture.id  )
+	glTexParameteri( texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST )
+	glBindTexture( texture.target, 0 )		
 
 if __name__ == "__main__":
 	window = Board(BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT)
+
 	pyglet.app.run()
