@@ -232,6 +232,8 @@ class Board(pyglet.window.Window):
 		yp1 = self.height//3
 		xp2 = self.width//2 + self.TILE_SIZE
 		yp2 = self.height//3
+		texture_set_mag_filter_nearest( r_stone.get_texture() )
+		texture_set_mag_filter_nearest( b_stone.get_texture() )
 		pl1 = pyglet.sprite.Sprite(tiles[abs(self.player - 2)], xp1, yp1, batch = self.batch)
 		pl2 = pyglet.sprite.Sprite(tiles[self.player * 2 - 2], xp2, yp2, batch = self.batch)
 		pl1.scale = 3; pl2.scale = 3
@@ -396,6 +398,5 @@ def texture_set_mag_filter_nearest( texture ): #функция, преобраз
 
 if __name__ == "__main__":
 	window = Board(BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT)
-	texture_set_mag_filter_nearest( r_stone.get_texture() )
-	texture_set_mag_filter_nearest( b_stone.get_texture() )
+
 	pyglet.app.run()
