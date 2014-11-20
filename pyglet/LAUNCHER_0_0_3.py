@@ -16,7 +16,7 @@ if __name__ == "__main__":
 	window = Board(BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT)
 	client = Client(window)
 	def on_reqconnect():
-		client.send('c','sett')
+		client.send('c','connection')
 	def on_mademove(player,x1,y1):
 		client.send((player,x1,y1),'move')
 	window.on_mademove = on_mademove
