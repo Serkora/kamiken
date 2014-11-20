@@ -8,10 +8,10 @@
 pyglet.app.run тоже нужно импортировать в ланчере, так как иначе он не знает этой команды.
 """
 
-from kamiken_0_1_3s import Board, BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT
+from kamiken_0_1_4 import Board, BOARD_W, BOARD_H, MSG, TILE_SIZE, FONT
 
 from CLIENT_0_0_3 import Client
-from SERVER_0_0_3s import GameServer
+from SERVER_0_0_3 import GameServer
 from pyglet.app import run
 
 if __name__ == "__main__":

@@ -10,7 +10,7 @@ enc = 'utf-8'
 
 class GameServer(object):
 
-	def __init__(self, port=9009):
+	def __init__(self, port=9010):
 		self.listener = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 		self.listenerip = listenerip
 		print(self.listenerip)
@@ -49,23 +49,32 @@ class GameServer(object):
 			return "settings"
 		if re.search('^__CONN__',msg):
 			return "connection"
-		
+	
+	def manage_connections(self,msg,addr):
+		if msg == "c" or msg == "y":
+			self.players += 1
+			self.pladdr.append(addr)
+		if msg == "disconnect":
+			self.players -= 1
+			self.pladdr.remove(addr)
+			if self.players == 0:
+				self.gamestate = ""
+		elif msg=="stop":
+			self.gamestate = ""
+			self.players = 0
+			self.pladdr = []
+		elif msg=="shutdown":
+			self.gamestate = ""
+			self.shutdown = True
+
 	def start(self):
 		print("waiting for connections.")
 		try:
 			while self.players<2:
 				msg,addr,dtype=self.receive()
 				if msg=="c" or msg=="y":
-					if True:#addr not in self.pladdr:
-						self.pladdr.append(addr)
-						if self.players==0:
-							print('Player 1 connected!')
-#							self.players+=1					
-						elif self.players==1:
-							print('Player2 connected!')
-#							self.players+=1	
-						self.players += 1
-			self.send((0,1,1),(1,2),'sett')		# костыли-костылики. Gередаёт 3-tuple
+					self.manage_connections(msg,addr)
+			self.send((0,1,1),(1,2),'sett')		# костыли-костылики. Передаёт 3-tuple
 												# чтобы клиентский receive() не ругался.
 			
 # 			while self.gamestate!="running":
@@ -100,7 +109,7 @@ class GameServer(object):
 				if dtype=="movement":
 					self.send(msg,sndind,'move')
 				elif dtype=="connection":
-					self.manage_connections(msg)
+					self.manage_connections(msg,addr)
 					
 		except KeyboardInterrupt:
 			self.shutdown = True
