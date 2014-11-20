@@ -51,7 +51,7 @@ class GameServer(object):
 			return "connection"
 	
 	def manage_connections(self,msg,addr):
-		if msg == "c" or msg == "y":
+		if msg == "connect":
 			self.players += 1
 			self.pladdr.append(addr)
 		if msg == "disconnect":
