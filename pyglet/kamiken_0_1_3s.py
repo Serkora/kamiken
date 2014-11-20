@@ -288,8 +288,15 @@ class Board(pyglet.window.Window):
 			if 0 <= y1 < self.BRD_H and 0 <= x1 < self.BRD_W:
 				if self.ALL_STONES[y1,x1]%(self.player + 2)==0 and self.turn==self.player:
 					self.make_move(x1,y1,self.player)
-					self.dispatch_event('on_mademove',self.player,x1,y1) # создаётся ивент, который
-					# при наличии сетевого клиента перехватывается и высылает ход на сервер.
+					for i in range(0,5):
+						pyglet.clock.schedule_once(
+						lambda x: self.dispatch_event('on_mademove',self.player,x1,y1), (i*0.1)
+						)
+# 						pyglet.clock.schedule_once(
+# 						lambda x: print(i), (i*0.1)
+# 						)
+					# Создаётся ивент, который при наличии сетевого клиента перехватывается
+					# и высылает ход на сервер. Повторяется 5 раз с интервалом в 100мс.
 					# Если клиента нет, то ничего не происходит.
 
 	def on_mouse_motion(self, x, y, dx, dy):

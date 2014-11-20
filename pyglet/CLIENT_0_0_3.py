@@ -8,7 +8,7 @@ from random import randint
 
 
 serverip = '54.69.163.135'
-serverport = 9009
+serverport = 9010
 #serverip = '127.0.0.1'
 #myip = '127.0.0.1'
 myip = '0.0.0.0'
@@ -22,7 +22,7 @@ class Client(object):
 		self.myip = myip
 		self.myport = myport
 		self.conn = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-#		self.conn.bind((self.myip, self.myport))
+		self.conn.bind((self.myip, self.myport))
 		self.game = game
 		global ThrListen								# make it global to force-stop
 		ThrListen=Thread(target=self.nw_listen,args=())	# create a network listener thread
