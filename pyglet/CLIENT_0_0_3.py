@@ -5,10 +5,13 @@ import socket
 import time
 from threading import Thread
 from random import randint
+from configparser import ConfigParser
 
+config = ConfigParser()
+config.readfp(open("config021.ini"))
 
-serverip = '54.69.163.135'
-serverport = 9010
+serverip = config.get('network','serverip')
+serverport = int(config.get('network','serverport'))
 #serverip = '127.0.0.1'
 #myip = '127.0.0.1'
 myip = '0.0.0.0'
