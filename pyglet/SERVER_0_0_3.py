@@ -55,8 +55,9 @@ class GameServer(object):
 			self.players += 1
 			self.pladdr.append(addr)
 		if msg == "disconnect":
-			self.players -= 1
-			self.pladdr.remove(addr)
+			if self.players>0:
+				self.players -= 1
+				self.pladdr.remove(addr)
 			if self.players == 0:
 				self.gamestate = ""
 		elif msg=="stop":
@@ -72,7 +73,7 @@ class GameServer(object):
 		try:
 			while self.players<2:
 				msg,addr,dtype=self.receive()
-				if msg=="c" or msg=="y":
+				if msg=="connect":
 					self.manage_connections(msg,addr)
 			self.send((0,1,1),(1,2),'sett')		# костыли-костылики. Передаёт 3-tuple
 												# чтобы клиентский receive() не ругался.
