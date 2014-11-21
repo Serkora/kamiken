@@ -1,7 +1,7 @@
 #!/Library/Frameworks/Python.framework/Versions/3.4/bin/python3.4
 #  - * -  coding: UTF - 8  - * - 
 '''
-Kamiken v0.2.0
+Kamiken v0.2.1
 '''
 
 import pyglet
@@ -9,7 +9,9 @@ import sys
 from pyglet.gl import *
 from pyglet.window import mouse
 from pyglet.window import key
-from numpy import zeros, where
+from numpy import zeros, where, cos, arccos, pi
+import numpy as np
+from math import copysign
 from random import randint
 from configparser import ConfigParser
 
@@ -139,10 +141,13 @@ class Board(pyglet.window.Window):
 		self.BRD_W = BOARD_W
 		self.scale = self.TILE_SIZE/r_stone.width
 		self.state = "setup" # после коннекта на playing изменяется
+		self.pulseiter = 0
+		self.pulsevals = np.arange(-128,128,16)
 			# окно и отступы
 		self.WIN_W = (self.BRD_W+2)*self.SQUARE_SIZE
 		self.WIN_H = (self.BRD_H+2)*self.SQUARE_SIZE
-		super(Board, self).__init__(width=self.WIN_W, height=self.WIN_H, caption=('Kamiken'))
+		super(Board, self).__init__(width=self.WIN_W, height=self.WIN_H, 
+									caption=('Kamiken'), vsync=True)
 		self.set_fullscreen(eval(config.get('settings','fullscreen')))
 		self.margin_v = (self.height - self.SQUARE_SIZE * self.BRD_H) // 2
 		self.margin_h = (self.width - self.SQUARE_SIZE * self.BRD_W) // 2
@@ -155,6 +160,8 @@ class Board(pyglet.window.Window):
 		self.FADE_X = 0
 		self.FADE_Y = 0
 		self.FADE_FLAG = False
+		self.pulseopacity = 1
+		self.pulse_stone = (-1,-1)
 		self.fps_display = pyglet.clock.ClockDisplay()
 			# лейблы / текст
 		self.msg = MSG
@@ -168,6 +175,7 @@ class Board(pyglet.window.Window):
 			batch = self.batch)
 		self.boardtxt = TextWidget(str(BOARD_H), self.width//2 + 60, self.height//2 + 41, 
 									50, self.batch)
+		
 	
 	def update_coordinates(self):
 		"""
@@ -192,6 +200,8 @@ class Board(pyglet.window.Window):
 		Снова вернулись к квадратной. Из TextWidget'а берётся введённое число, 
 		а дальше всё как и раньше.
 		Снова вызывается функция обновления размера окна, отступов, координат лейблов.
+		В стек добавляется функция, изименяющая прозрачность последнего хода каждые 1/15с.
+		В принципе, туда можно добавить и другую анимацию.
 		"""
 		boardsize = int(self.boardtxt.document.text)
 		self.boardtxt.layout.delete()
@@ -204,6 +214,7 @@ class Board(pyglet.window.Window):
 		self.ALL_STONES = zeros([self.BRD_W, self.BRD_H])
 		self.dispatch_event('on_reqconnect')
 		self.state = "playing"
+		pyglet.clock.schedule_interval(self.pulsation,1/30)
 
 	def labels_redraw(self):
 		"""
@@ -221,7 +232,17 @@ class Board(pyglet.window.Window):
 			self.brdlabel.x = self.width/2 - 40
 			self.brdlabel.y = self.height/2 + 50
 		pass
-
+	
+	def pulsation(self,trash):
+#		self.pulseopacity = 127 + 128*cos((arccos((self.pulseopacity - 127)/128))+0.5)
+# 		ac = arccos(self.pulseopacity)
+# 		cs = cos(self.pulseopacity)
+# 		self.pulseopacity = cos(ac-copysign(0.1,cos(ac+0.1)-cos(ac)))
+		self.pulseopacity = 200+55*cos(self.pulseiter)
+		self.pulseiter = (self.pulseiter+pi/10)%(2*pi)
+#		self.msg = str(round(self.pulseopacity,5))+"    "+str(round(ac,5))
+#		self.msg = str(self.pulseopacity)
+	
 	def on_draw(self):
 		"""
 		Фоновая картина и лейбл рисуются всегда. Дальше, в зависимости от состояния,
@@ -229,6 +250,7 @@ class Board(pyglet.window.Window):
 		либо конец игры и вывод счёта. 		
 		"""
 		self.clear()
+		pyglet.gl.glClearColor( * colors['white'])
 		self.label.text = self.msg
 		IMG_IN_WINDOW_W = self.width//image.width
 		IMG_IN_WINDOW_H = self.height//image.height
@@ -239,7 +261,8 @@ class Board(pyglet.window.Window):
 		for i in range(IMG_IN_WINDOW_W * 4 - 1):
 			for j in range(IMG_IN_WINDOW_H * 4 - 1):
 				image.blit(x=i * image.width, y=j * image.width)
-				
+		self.fps_display.draw()
+		
 		if self.state=="playing": self.draw_game()
 		elif self.state=="setup": self.draw_setup()	
 		elif self.state=="finish": self.draw_finish()
@@ -252,7 +275,6 @@ class Board(pyglet.window.Window):
 		размером одной клетки.
 		(i+0.5) и (j+0.5) нужны потому что anchor спрайтов в центре, а не нижнем углу.
 		"""
-		pyglet.gl.glClearColor( * colors['white'])
 		stones = []
 		self.fade_stone = pyglet.sprite.Sprite(tiles[self.turn],
 						       self.FADE_X, self.FADE_Y,
@@ -267,8 +289,11 @@ class Board(pyglet.window.Window):
 					new_stone = pyglet.sprite.Sprite(tiles[self.ALL_STONES[j,i]],
 									 x_stone, y_stone,
 									 batch=self.batch         )
-					new_stone.opacity = opacity[self.ALL_STONES[j,i]]
 					new_stone.scale = self.scale
+					if (i,j) == self.pulse_stone:
+						new_stone.opacity = self.pulseopacity
+					else:
+						new_stone.opacity = opacity[self.ALL_STONES[j,i]]
 					stones.append(new_stone)
 		self.batch.draw()
 		if self.FADE_FLAG:
@@ -314,6 +339,7 @@ class Board(pyglet.window.Window):
 					except: pass
 		self.turn = self.turn * 2%3  # 1 - >2, 2 - >1
 		self.FADE_FLAG = False
+		self.pulse_stone = (x1,y1)
 		self.label_update()
 
 	def on_movereceive(event,self,player,x,y):
@@ -353,9 +379,6 @@ class Board(pyglet.window.Window):
 				or xp2 <= x <= xp2 + self.TILE_SIZE * 3 and yp2 <= y <= yp2 + self.TILE_SIZE * 3:
 					self.start_game()
 					self.msg = "Waiting for second player..."
-# 			elif xp2 <= x <= xp2 + self.TILE_SIZE * 3 and yp2 <= y <= yp2 + self.TILE_SIZE * 3:
-# 				self.start_game()
-# 				self.msg = "Waiting for second player..."
 			
 		elif button == mouse.LEFT and self.state == "playing":
 			x1 = (x - self.margin_h)//self.SQUARE_SIZE
@@ -394,7 +417,6 @@ class Board(pyglet.window.Window):
 				self.FADE_X = (x1 + 0.5) * self.SQUARE_SIZE + self.margin_h
 				self.FADE_Y = (y1 + 0.5) * self.SQUARE_SIZE + self.margin_v
 				self.FADE_FLAG = True
-		self.clear()
 	
 	def on_text(self,text):
 		if self.state == "setup" and self.boardtxt.focus:
@@ -421,14 +443,13 @@ class Board(pyglet.window.Window):
 		if symbol == key.C and modifiers and key.MOD_SHIFT:
 			self.dispatch_event('on_reqconnect')
 			self.msg = "Waiting for second player..."
-		if symbol == key.E and key.MOD_SHIFT: 	# Для аутизм - режима
+		if symbol == key.E and key.MOD_SHIFT: 	# Конец игры
 			self.state = "finish"
 		if symbol == key.Q and key.MOD_SHIFT: 	# Для аутизм - режима
 			self.player = self.player * 2%3
-		if symbol == key.T and key.MOD_SHIFT:	# тесты - хуесты. 
+		if symbol == key.T and key.MOD_SHIFT:	# Для тестов. 
 			pass
-#			self.margin_h-=5
-			
+						
 	def label_update(self):
 		if self.turn==self.player:
 			self.msg = 'Your turn!'
@@ -460,5 +481,5 @@ def texture_set_mag_filter_nearest( texture ): #функция, преобраз
 
 if __name__ == "__main__":
 	window = Board(BOARD_W, BOARD_H, MSG, TILE_SIZE, SQUARE_SIZE, FONT)
-
+	pyglet.clock.schedule(lambda x: None)
 	pyglet.app.run()
