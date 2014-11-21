@@ -1,7 +1,7 @@
 #!/Library/Frameworks/Python.framework/Versions/3.4/bin/python3.4
 #  - * -  coding: UTF - 8  - * - 
 '''
-Kamiken v0.1.5
+Kamiken v0.2.0
 '''
 
 import pyglet
