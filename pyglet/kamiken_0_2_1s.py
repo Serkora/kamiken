@@ -137,7 +137,7 @@ class Board(pyglet.window.Window):
 		self.SQUARE_SIZE = SQUARE_SIZE
 		self.BRD_H = BOARD_H
 		self.BRD_W = BOARD_W
-		self.scale = self.TILE_SIZE/150
+		self.scale = self.TILE_SIZE/r_stone.width
 		self.state = "setup" # после коннекта на playing изменяется
 			# окно и отступы
 		self.WIN_W = (self.BRD_W+2)*self.SQUARE_SIZE
@@ -174,6 +174,9 @@ class Board(pyglet.window.Window):
 		Подбирает размер окна под размер поля; изменяет отступы, если размер окна
 		изменился, чтобы поле осталось в центре. Если оконный режим — меняет размер окна.
 		"""
+		self.SQUARE_SIZE = (self.height - 60)/self.BRD_H
+		self.TILE_SIZE = 0.8 * self.SQUARE_SIZE
+		self.scale = self.TILE_SIZE/150
 		self.WIN_W = (self.BRD_W + 2) * self.SQUARE_SIZE
 		self.WIN_H = (self.BRD_H + 2) * self.SQUARE_SIZE
 		if not self.fullscreen:
@@ -255,6 +258,7 @@ class Board(pyglet.window.Window):
 						       self.FADE_X, self.FADE_Y,
 						       batch = self.batch_fade)
 		self.fade_stone.opacity = FADE_STONE_OPACITY
+		self.fade_stone.scale = self.scale
 		for i in range(self.BRD_H):
 			for j in range(self.BRD_W):
 				x_stone = (i + 0.5) * self.SQUARE_SIZE + self.margin_h
@@ -264,6 +268,7 @@ class Board(pyglet.window.Window):
 									 x_stone, y_stone,
 									 batch=self.batch         )
 					new_stone.opacity = opacity[self.ALL_STONES[j,i]]
+					new_stone.scale = self.scale
 					stones.append(new_stone)
 		self.batch.draw()
 		if self.FADE_FLAG:
@@ -276,7 +281,7 @@ class Board(pyglet.window.Window):
 		yp2 = self.height//2.5
 		pl1 = pyglet.sprite.Sprite(tiles[abs(self.player - 2)], xp1, yp1, batch=self.batch)
 		pl2 = pyglet.sprite.Sprite(tiles[self.player * 2 - 2], xp2, yp2, batch=self.batch)
-		pl1.scale = 3; pl2.scale = 3
+		pl1.scale = self.scale * 3; pl2.scale = self.scale * 3
 		if abs(self.player - 2) == 1: pl2.opacity = 50
 		else: pl1.opacity = 50
 		self.batch.draw()
