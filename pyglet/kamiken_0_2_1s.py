@@ -158,8 +158,8 @@ class Board(pyglet.window.Window):
 		self.margin_v = (self.height - self.SQUARE_SIZE * self.BRD_H) // 2
 		self.margin_h = (self.width - self.SQUARE_SIZE * self.BRD_W) // 2
 			# графические параметры
-		texture_set_mag_filter_nearest( r_stone.get_texture() )
-		texture_set_mag_filter_nearest( b_stone.get_texture() )
+# 		texture_set_mag_filter_nearest( r_stone.get_texture() )
+# 		texture_set_mag_filter_nearest( b_stone.get_texture() )
 		self.batch_launcher = pyglet.graphics.Batch()
 		self.batch = pyglet.graphics.Batch()
 		self.batch_fade = pyglet.graphics.Batch()
@@ -343,10 +343,9 @@ class Board(pyglet.window.Window):
 		if self.gametype == "multiplayer": 
 			mp_sel = pyglet.sprite.Sprite(mp_select, self.mp_label.x, self.mp_label.y,
 											batch=self.batch)
+		else:
 			sp_sel = pyglet.sprite.Sprite(sp_select, self.sp_label.x, self.sp_label.y,
 											batch=self.batch)
-			
-			
 		self.batch.draw()
 		pass
 
@@ -413,11 +412,23 @@ class Board(pyglet.window.Window):
 			xp2 = self.width//2 + self.TILE_SIZE * 1.5
 			yp2 = self.height//2.5 - self.TILE_SIZE * 1.5
 			
+			xsp = self.sp_label.x - self.sp_label.content_width/2
+			ysp = self.sp_label.y - self.sp_label.content_height/2
+			xmp = self.mp_label.x - self.mp_label.content_width/2
+			ymp = self.mp_label.y - self.mp_label.content_height/2
+			
+			if xsp <= x <= xsp + self.sp_label.content_width \
+				and ysp <= y <= ysp + self.sp_label.content_height:
+					self.gametype = "singleplayer"
+			elif xmp <= x <= xmp + self.mp_label.content_width \
+				and ymp <= y <= ymp + self.mp_label.content_height:
+					self.gametype = "multiplayer"
+					
 			if xp1 <= x <= xp1 + self.TILE_SIZE * 3 and yp1 <= y <= yp1 + self.TILE_SIZE * 3 \
 				or xp2 <= x <= xp2 + self.TILE_SIZE * 3 and yp2 <= y <= yp2 + self.TILE_SIZE * 3:
 					self.start_game()
 					self.msg = "Waiting for second player..."
-			
+				
 		elif button == mouse.LEFT and self.state == "playing":
 			x1 = (x - self.margin_h)//self.SQUARE_SIZE
 			y1 = (y - self.margin_v)//self.SQUARE_SIZE
@@ -430,6 +441,7 @@ class Board(pyglet.window.Window):
 						)
 
 	def on_mouse_motion(self, x, y, dx, dy):
+		self.msg = str(x)+"  "+str(y)
 		if self.state == "setup":
 			xp1 = self.width//2 - self.TILE_SIZE * 4.5
 			yp1 = self.height//2.5 - self.TILE_SIZE * 1.5
