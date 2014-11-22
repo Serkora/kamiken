@@ -152,8 +152,8 @@ class Board(pyglet.window.Window):
 		self.margin_v = (self.height - self.SQUARE_SIZE * self.BRD_H) // 2
 		self.margin_h = (self.width - self.SQUARE_SIZE * self.BRD_W) // 2
 			# графические параметры
-		texture_set_mag_filter_nearest( r_stone.get_texture() )
-		texture_set_mag_filter_nearest( b_stone.get_texture() )
+		#texture_set_mag_filter_nearest( r_stone.get_texture() )
+		#texture_set_mag_filter_nearest( b_stone.get_texture() )
 		self.batch_launcher = pyglet.graphics.Batch()
 		self.batch = pyglet.graphics.Batch()
 		self.batch_fade = pyglet.graphics.Batch()
@@ -182,7 +182,7 @@ class Board(pyglet.window.Window):
 		Подбирает размер окна под размер поля; изменяет отступы, если размер окна
 		изменился, чтобы поле осталось в центре. Если оконный режим — меняет размер окна.
 		"""
-		self.SQUARE_SIZE = (self.height - 60)/self.BRD_H
+		self.SQUARE_SIZE = (self.height - 60)//self.BRD_H
 		self.TILE_SIZE = 0.8 * self.SQUARE_SIZE
 		self.scale = self.TILE_SIZE/150
 		self.WIN_W = (self.BRD_W + 2) * self.SQUARE_SIZE
