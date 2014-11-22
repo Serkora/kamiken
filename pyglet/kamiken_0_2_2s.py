@@ -24,7 +24,8 @@ colors = {	'white'  : (255, 255, 255, 0.3),
 	     	'board'  : (0.59, 0.54, 0.51, 0.3),
 	     	'r_stone': (243, 104, 18, 255),
 	     	'b_stone': (14, 193, 225, 255),
-	     	'text'	 : (14, 193, 225, 255)}
+	     	'textb'	 : (14, 193, 225, 255),
+	     	'textr'	 : (243, 104, 18, 255)}
 
 '''
 Переменные
@@ -104,7 +105,7 @@ class TextWidget(object):
     def __init__(self, text, x, y, width, batch):
         self.document = pyglet.text.document.UnformattedDocument(text)
         self.document.set_style(0, len(self.document.text), 
-            					dict(color=colors['text'],font_size=20))
+            					dict(color=colors['textb'],font_size=20))
         font = FONT
         height = 30
 
@@ -158,9 +159,8 @@ class Board(pyglet.window.Window):
 		self.margin_v = (self.height - self.SQUARE_SIZE * self.BRD_H) // 2
 		self.margin_h = (self.width - self.SQUARE_SIZE * self.BRD_W) // 2
 			# графические параметры
-# 		texture_set_mag_filter_nearest( r_stone.get_texture() )
-# 		texture_set_mag_filter_nearest( b_stone.get_texture() )
 		self.batch_launcher = pyglet.graphics.Batch()
+		self.batch_menu = pyglet.graphics.Batch()
 		self.batch = pyglet.graphics.Batch()
 		self.batch_fade = pyglet.graphics.Batch()
 		self.FADE_X = 0
@@ -184,18 +184,41 @@ class Board(pyglet.window.Window):
 		"""
 		self.brdlabel = pyglet.text.Label(
 			"Board size", font_size=15, anchor_x="center", font_name=FONT,
-			color=colors['text'], x=self.width/2 - 40, y=self.height/2 + 50, 
+			color=colors['textb'], x=self.width/2 - 40, y=self.height/1.35, 
 			batch = self.batch)
-		self.boardtxt = TextWidget(str(BOARD_H), self.width//2 + 60, self.height//2 + 41, 
+		self.boardtxt = TextWidget(str(BOARD_H), self.width/2 + 60, self.height/1.35 - 7.5, 
 										50, self.batch)
 		self.sp_label = pyglet.text.Label(
 			"Single Player", font_size=15, anchor_x="center", font_name=FONT,
-			color=colors['text'], x=self.width/2-70, y=self.height/2+20, 
+			color=colors['textb'], x=self.width/2-70, y=self.height/1.6, 
 			batch = self.batch)
 		self.mp_label = pyglet.text.Label(
 			"Multiplayer", font_size=15, anchor_x="center", font_name=FONT,
-			color=colors['text'], x=self.width/2+70, y=self.height/2+20, 
+			color=colors['textb'], x=self.width/2+70, y=self.height/1.6, 
 			batch = self.batch)
+	
+	def menulabels(self):
+		self.skipturn_label = pyglet.text.Label(
+			"Skip turn", font_size = 10, anchor_x="left", font_name=FONT,
+			color=colors['textb'], x=self.margin_h, y=self.margin_v/2,
+			batch = self.batch_menu)
+		self.endgame_label = pyglet.text.Label(
+			"Finish game", font_size = 10, anchor_x="left", font_name=FONT,
+			color=colors['textb'], x=self.margin_h + 70, y=self.margin_v/2,
+			batch = self.batch_menu)
+		self.settings_label = pyglet.text.Label(
+			"Settings", font_size = 10, anchor_x="left", font_name=FONT,
+			color=colors['textb'], x=self.margin_h + 150, y=self.margin_v/2,
+			batch = self.batch_menu)
+		self.disconnect_label = pyglet.text.Label(	
+			"Disconnect", font_size = 10, anchor_x="left", font_name=FONT,
+			color=colors['textb'], x=self.margin_h + 220, y=self.margin_v/2,
+			batch = self.batch_menu)
+# 		self.quit_label = pyglet.text.Label(	
+# 			"Quit", font_size = 10, anchor_x="left", font_name=FONT,
+# 			color=colors['textb'], x=self.margin_h + 320, y=self.margin_v/2,
+# 			batch = self.batch_menu)
+											
 	
 	def update_coordinates(self):
 		"""
@@ -213,6 +236,7 @@ class Board(pyglet.window.Window):
 		self.margin_v = (self.height - self.SQUARE_SIZE*self.BRD_H) // 2
 		self.margin_h = (self.width - self.SQUARE_SIZE*self.BRD_W) // 2
 		self.labels_redraw()
+		self.FADE_FLAG = False # скорее всего, курсор будет уже на другом местеЙ
 
 	def start_game(self):
 		"""
@@ -230,11 +254,12 @@ class Board(pyglet.window.Window):
 		self.mp_label.delete()
 		del self.boardtxt
 		del self.brdlabel
-		del self.sp_label
-		del self.mp_label
+# 		del self.sp_label
+# 		del self.mp_label
 		self.BRD_H = boardsize
 		self.BRD_W = boardsize
 		self.update_coordinates()
+		self.menulabels()
 		self.ALL_STONES = zeros([self.BRD_W, self.BRD_H])
 		self.dispatch_event('on_reqconnect')
 		self.state = "playing"
@@ -242,25 +267,37 @@ class Board(pyglet.window.Window):
 
 	def labels_redraw(self):
 		"""
-		Проверяет, какие из лейблов/полей текста присутствуют (два из них удаляются
-		после начала игры) и ставит на нужное место при изменении размера окна
-		или перехода в полноэкранный режим.
+		Проверяет, какие из лейблов/полей текста присутствуют (какие-то удаляются 
+		после началаигры, какие-то, наоборот, добавляются) и ставит на нужное место 
+		при изменении размера окна или переходе в полноэкранный режим.
 		"""
 		if hasattr(self, 'label'):
 			self.label.x = self.width//2
 			self.label.y = self.height - 25
 		if hasattr(self, 'boardtxt'):
 			self.boardtxt.layout.x = self.width//2 + 60
-			self.boardtxt.layout.y = self.height//2 + 41
+			self.boardtxt.layout.y = self.height/1.35 - 10
 		if hasattr(self, 'brdlabel'):
 			self.brdlabel.x = self.width/2 - 40
-			self.brdlabel.y = self.height/2 + 50
+			self.brdlabel.y = self.height/1.35
 		if hasattr(self, 'sp_label'):
 			self.sp_label.x = self.width/2-70
-			self.sp_label.y = self.height/2+20
+			self.sp_label.y = self.height/1.6
 		if hasattr(self, 'mp_label'):
 			self.mp_label.x = self.width/2+70
-			self.mp_label.y = self.height/2+20
+			self.mp_label.y = self.height/1.6
+		if hasattr(self, 'skipturn_label'):
+			self.skipturn_label.x = self.margin_h
+			self.skipturn_label.y = self.margin_v/2
+		if hasattr(self, 'endgame_label'):
+			self.endgame_label.x = self.margin_h + 70
+			self.endgame_label.y = self.margin_v/2
+		if hasattr(self, 'settings_label'):
+			self.settings_label.x = self.margin_h + 150
+			self.settings_label.y = self.margin_v/2
+		if hasattr(self, 'disconnect_label'):
+			self.disconnect_label.x= self.margin_h + 220
+			self.disconnect_label.y = self.margin_v/2
 		pass
 	
 	def pulsation(self,trash):
@@ -268,10 +305,12 @@ class Board(pyglet.window.Window):
 # 		ac = arccos(self.pulseopacity)
 # 		cs = cos(self.pulseopacity)
 # 		self.pulseopacity = cos(ac-copysign(0.1,cos(ac+0.1)-cos(ac)))
-		self.pulseopacity = 200+55*cos(self.pulseiter)
-		self.pulseiter = (self.pulseiter+pi/10)%(2*pi)
 #		self.msg = str(round(self.pulseopacity,5))+"    "+str(round(ac,5))
 #		self.msg = str(self.pulseopacity)
+
+		self.pulseopacity = 200+55*cos(self.pulseiter)
+		self.pulseiter = (self.pulseiter+pi/10)%(2*pi)
+
 	
 	def on_draw(self):
 		"""
@@ -291,7 +330,7 @@ class Board(pyglet.window.Window):
 		for i in range(IMG_IN_WINDOW_W * 4 - 1):
 			for j in range(IMG_IN_WINDOW_H * 4 - 1):
 				image.blit(x=i * image.width, y=j * image.width)
-		self.fps_display.draw()
+#		self.fps_display.draw()
 		
 		if self.state=="playing": self.draw_game()
 		elif self.state=="setup": self.draw_setup()	
@@ -326,6 +365,7 @@ class Board(pyglet.window.Window):
 						new_stone.opacity = opacity[self.ALL_STONES[j,i]]
 					stones.append(new_stone)
 		self.batch.draw()
+		self.batch_menu.draw()
 		if self.FADE_FLAG:
 			self.batch_fade.draw()
 
@@ -353,6 +393,7 @@ class Board(pyglet.window.Window):
 		self.draw_game()
 		score_r = len(where(self.ALL_STONES==3)[0])
 		score_b = len(where(self.ALL_STONES==4)[1])
+		testb = pyglet.graphics.Batch()
 		self.msg = "Red: "+str(score_r)+"  Blue: "+str(score_b)
 
 	def make_move(self,x1,y1,pl):
@@ -388,6 +429,79 @@ class Board(pyglet.window.Window):
 			self.label_update()
 		self.make_move(x,y,player)
 
+	def mouse_motion_setup(self,x,y):
+		"""
+		Следит за курсором и выставляет номер игрока, если курсор наводится на один 
+		из камней.
+		"""
+		xp1 = self.width//2 - self.TILE_SIZE * 4.5
+		yp1 = self.height//2.5 - self.TILE_SIZE * 1.5
+		xp2 = self.width//2 + self.TILE_SIZE * 1.5
+		yp2 = self.height//2.5 - self.TILE_SIZE * 1.5
+		if xp1 <= x <= xp1 + self.TILE_SIZE * 3 and yp1 <= y <= yp1 + self.TILE_SIZE * 3:
+			self.player = 1
+		if xp2 <= x <= xp2 + self.TILE_SIZE * 3 and yp2 <= y <= yp2 + self.TILE_SIZE * 3:
+			self.player = 2
+
+	def mouse_motion_play(self,x,y):
+		if (self.margin_h <= x < self.width - self.margin_h) and (self.margin_v <= y <
+				self.height - self.margin_v):
+			x1 = (x - self.margin_h)//self.SQUARE_SIZE
+			y1 = (y - self.margin_v)//self.SQUARE_SIZE
+			if self.ALL_STONES[y1,x1]%(self.player + 2)==0 and self.turn==self.player:
+				"""
+				Остаток от деления на номер игрока. Так что рисует только поверх пустой
+				или битой собой клетки. Для второго игрока это (0%(2 + 2) = 0, 
+				4%(2 + 2) = 0),  а для первого - (0%(1 + 2) = 0, 3%(1 + 2) = 0. 
+				Деление любых других чисел на (игрок + 2) будут иметь остаток.
+				(x1/y1 + 0.5) опять же из-за центрирования спрайтов.
+				"""
+				self.FADE_X = (x1 + 0.5) * self.SQUARE_SIZE + self.margin_h
+				self.FADE_Y = (y1 + 0.5) * self.SQUARE_SIZE + self.margin_v
+				self.FADE_FLAG = True
+		else: 
+			self.FADE_FLAG = False
+
+	def mouse_motion_menu(self,x,y):
+		"""
+		Проверяет, находится ли курсор примерно в пространстве, где кнопки меню 
+		находятся (чтобы лишний раз не присваиваеть одно и то же значение), и если
+		находятся, то уже меняет цвет соответствующего лейбла.
+		elif нужен, чтобы лейбл менял цвет обратно на синий в случае, когда
+		курсор уводится наверх, соответственно эта функция делает что-то когда
+		курсор находится в диапазоне от -20 пикселей до +20 пикселей от низа
+		и верха лейблов меню.
+		"""
+		if self.margin_h <= x <= self.width - self.margin_h and \
+			self.skipturn_label.y <= y <= self.skipturn_label.y + \
+				self.skipturn_label.content_height:
+					if self.skipturn_label.x <= x <= self.skipturn_label.x + \
+						self.skipturn_label.content_width:
+							self.skipturn_label.color = colors['textr']
+					else:
+						self.skipturn_label.color = colors['textb']
+					if self.endgame_label.x <= x <= self.endgame_label.x + \
+						self.endgame_label.content_width:
+							self.endgame_label.color = colors['textr']
+					else:
+						self.endgame_label.color = colors['textb']
+					if self.settings_label.x <= x <= self.settings_label.x + \
+						self.settings_label.content_width:
+							self.settings_label.color = colors['textr']
+					else:
+						self.settings_label.color = colors['textb']
+					if self.disconnect_label.x <= x <= self.disconnect_label.x + \
+						self.disconnect_label.content_width:
+							self.disconnect_label.color = colors['textr']
+					else:
+						self.disconnect_label.color = colors['textb']
+		elif self.skipturn_label.y - 20 <= y <= self.skipturn_label.y + \
+				self.skipturn_label.content_height + 20:
+					self.skipturn_label.color = colors['textb']
+					self.endgame_label.color = colors['textb']
+					self.settings_label.color = colors['textb']
+					self.disconnect_label.color = colors['textb']
+			
 	def on_mouse_press(self, x, y, button, modifiers):
 		"""
 		Если клик был по полю для ввода размера доски, то появляется каретка и
@@ -441,32 +555,17 @@ class Board(pyglet.window.Window):
 						)
 
 	def on_mouse_motion(self, x, y, dx, dy):
+		"""
+		Чтобы не забивать это обработчик событий кучей условий (а их будет много), 
+		присвоений и прочей фигни, решил вынести всё в отедльные функции, а тут
+		только вызывать то, что нужно, в зависимсоти от состояния игры.
+		"""
 		self.msg = str(x)+"  "+str(y)
-		if self.state == "setup":
-			xp1 = self.width//2 - self.TILE_SIZE * 4.5
-			yp1 = self.height//2.5 - self.TILE_SIZE * 1.5
-			xp2 = self.width//2 + self.TILE_SIZE * 1.5
-			yp2 = self.height//2.5 - self.TILE_SIZE * 1.5
-			if xp1 <= x <= xp1 + self.TILE_SIZE * 3 and yp1 <= y <= yp1 + self.TILE_SIZE * 3:
-				self.player = 1
-			if xp2 <= x <= xp2 + self.TILE_SIZE * 3 and yp2 <= y <= yp2 + self.TILE_SIZE * 3:
-				self.player = 2
-	
-		elif (self.margin_h <= x < self.width - self.margin_h) and (self.margin_v <= y <
-				self.height - self.margin_v) and self.state == "playing":
-			x1 = (x - self.margin_h)//self.SQUARE_SIZE
-			y1 = (y - self.margin_v)//self.SQUARE_SIZE
-			if self.ALL_STONES[y1,x1]%(self.player + 2)==0 and self.turn==self.player:
-				"""
-				Остаток от деления на номер игрока. Так что рисует только поверх пустой
-				или битой собой клетки. Для второго игрока это (0%(2 + 2) = 0, 
-				4%(2 + 2) = 0),  а для первого - (0%(1 + 2) = 0, 3%(1 + 2) = 0. 
-				Деление любых других чисел на (игрок + 2) будут иметь остаток.
-				(x1/y1 + 0.5) опять же из-за центрирования спрайтов.
-				"""
-				self.FADE_X = (x1 + 0.5) * self.SQUARE_SIZE + self.margin_h
-				self.FADE_Y = (y1 + 0.5) * self.SQUARE_SIZE + self.margin_v
-				self.FADE_FLAG = True
+		if self.state == "playing":
+			self.mouse_motion_play(x,y)
+			self.mouse_motion_menu(x,y)
+		elif self.state == "setup":
+			self.mouse_motion_setup(x,y)	
 	
 	def on_text(self,text):
 		if self.state == "setup" and self.boardtxt.focus:
