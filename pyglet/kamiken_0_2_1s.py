@@ -50,14 +50,20 @@ r_stone = pyglet.resource.image( config.get('images','red_stone')	)
 b_stone = pyglet.resource.image( config.get('images','blue_stone')	)
 r_board = pyglet.resource.image( config.get('images','red_board')	)
 b_board = pyglet.resource.image( config.get('images','blue_board')	)
+mp_select = pyglet.resource.image( config.get('images','mp_select')	)
+sp_select = pyglet.resource.image( config.get('images','sp_select')	)
 #r_point = pyglet.resource.image( config.get('images','red_point')	)
 #b_point = pyglet.resource.image( config.get('images','blue_point')	)
 
+# Выставляет привязку начала координат к центрам спрайтов
 board.anchor_x, board.anchor_y = board.width//2, board.height//2
 r_stone.anchor_x, r_stone.anchor_y =r_stone.width//2, r_stone.height//2
 b_stone.anchor_x, b_stone.anchor_y = b_stone.width//2, b_stone.height//2
 r_board.anchor_x, r_board.anchor_y =r_board.width//2, r_board.height//2
 b_board.anchor_x, b_board.anchor_y = b_board.width//2, b_board.height//2
+mp_select.anchor_x, mp_select.anchor_y = mp_select.width//2, mp_select.height//2
+sp_select.anchor_x, sp_select.anchor_y = sp_select.width//2, sp_select.height//2
+
 
 tiles = {		0.0		: board,
 				1.0		: r_stone,
@@ -141,8 +147,8 @@ class Board(pyglet.window.Window):
 		self.BRD_W = BOARD_W
 		self.scale = self.TILE_SIZE/r_stone.width
 		self.state = "setup" # после коннекта на playing изменяется
+		self.gametype = "multiplayer"
 		self.pulseiter = 0
-		self.pulsevals = np.arange(-128,128,16)
 			# окно и отступы
 		self.WIN_W = (self.BRD_W+2)*self.SQUARE_SIZE
 		self.WIN_H = (self.BRD_H+2)*self.SQUARE_SIZE
@@ -152,8 +158,8 @@ class Board(pyglet.window.Window):
 		self.margin_v = (self.height - self.SQUARE_SIZE * self.BRD_H) // 2
 		self.margin_h = (self.width - self.SQUARE_SIZE * self.BRD_W) // 2
 			# графические параметры
-		#texture_set_mag_filter_nearest( r_stone.get_texture() )
-		#texture_set_mag_filter_nearest( b_stone.get_texture() )
+		texture_set_mag_filter_nearest( r_stone.get_texture() )
+		texture_set_mag_filter_nearest( b_stone.get_texture() )
 		self.batch_launcher = pyglet.graphics.Batch()
 		self.batch = pyglet.graphics.Batch()
 		self.batch_fade = pyglet.graphics.Batch()
@@ -169,13 +175,27 @@ class Board(pyglet.window.Window):
 			text=self.msg, font_size=TILE_SIZE - 10, anchor_x='center', font_name=FONT,
 			color=colors['b_stone'], x=self.width//2, y=self.height - 25,
 			batch = self.batch)
+		self.startuplabels()
+
+	
+	def startuplabels(self):
+		"""
+		Создаёт лейблы/виджеты настроек.
+		"""
 		self.brdlabel = pyglet.text.Label(
 			"Board size", font_size=15, anchor_x="center", font_name=FONT,
 			color=colors['text'], x=self.width/2 - 40, y=self.height/2 + 50, 
 			batch = self.batch)
 		self.boardtxt = TextWidget(str(BOARD_H), self.width//2 + 60, self.height//2 + 41, 
-									50, self.batch)
-		
+										50, self.batch)
+		self.sp_label = pyglet.text.Label(
+			"Single Player", font_size=15, anchor_x="center", font_name=FONT,
+			color=colors['text'], x=self.width/2-70, y=self.height/2+20, 
+			batch = self.batch)
+		self.mp_label = pyglet.text.Label(
+			"Multiplayer", font_size=15, anchor_x="center", font_name=FONT,
+			color=colors['text'], x=self.width/2+70, y=self.height/2+20, 
+			batch = self.batch)
 	
 	def update_coordinates(self):
 		"""
@@ -206,8 +226,12 @@ class Board(pyglet.window.Window):
 		boardsize = int(self.boardtxt.document.text)
 		self.boardtxt.layout.delete()
 		self.brdlabel.delete()
+		self.sp_label.delete()
+		self.mp_label.delete()
 		del self.boardtxt
 		del self.brdlabel
+		del self.sp_label
+		del self.mp_label
 		self.BRD_H = boardsize
 		self.BRD_W = boardsize
 		self.update_coordinates()
@@ -231,6 +255,12 @@ class Board(pyglet.window.Window):
 		if hasattr(self, 'brdlabel'):
 			self.brdlabel.x = self.width/2 - 40
 			self.brdlabel.y = self.height/2 + 50
+		if hasattr(self, 'sp_label'):
+			self.sp_label.x = self.width/2-70
+			self.sp_label.y = self.height/2+20
+		if hasattr(self, 'mp_label'):
+			self.mp_label.x = self.width/2+70
+			self.mp_label.y = self.height/2+20
 		pass
 	
 	def pulsation(self,trash):
@@ -309,6 +339,14 @@ class Board(pyglet.window.Window):
 		pl1.scale = self.scale * 3; pl2.scale = self.scale * 3
 		if abs(self.player - 2) == 1: pl2.opacity = 50
 		else: pl1.opacity = 50
+
+		if self.gametype == "multiplayer": 
+			mp_sel = pyglet.sprite.Sprite(mp_select, self.mp_label.x, self.mp_label.y,
+											batch=self.batch)
+			sp_sel = pyglet.sprite.Sprite(sp_select, self.sp_label.x, self.sp_label.y,
+											batch=self.batch)
+			
+			
 		self.batch.draw()
 		pass
 
