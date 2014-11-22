@@ -16,7 +16,7 @@ from random import randint
 from configparser import ConfigParser
 
 config = ConfigParser()
-config.readfp(open("config021.ini"))
+config.readfp(open("config.ini"))
 
 colors = {	'white'  : (255, 255, 255, 0.3),
 	     	'red'    : (255, 0, 0, 0.3),
