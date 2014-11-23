@@ -183,6 +183,8 @@ class GameMenu(object):
 		именно тут, чтобы одной этой функцией легко перерисовывать кнопки при изменении 
 		размера окна.
 		Отправные координаты, впрочем, всё равно нужно обновлять.
+		В горизонтальном расположении первая кнопка ставится вне лупа, потому что
+		расположение кнопок зависит от предыдущей.
 		"""
 		self.fontsize = height/40
 		if self.orientation == "vertical":
@@ -192,8 +194,8 @@ class GameMenu(object):
 				self.buttons[i].y = self.y - self.fontsize * (i*2)
 
 		elif self.orientation == "horizontal":
-			self.skipturn.x, self.skipturn.y = self.x, self.y
-			self.skipturn.font_size = self.fontsize
+			self.buttons[0].x, self.buttons[0].y = self.x, self.y
+			self.buttons[0].font_size = self.fontsize
 			for i in range(1, len(self.buttons)):
 				self.buttons[i].font_size = self.fontsize
 				self.buttons[i].y = self.y
@@ -212,10 +214,7 @@ class GameMenu(object):
 		for button in self.buttons:
 			if button.x <= x <= button.x + button.content_width and \
 				button.y - button.content_height <= y <= button.y:
-					button.color = (255,0,0,255)
-# 			else:
-# 				button.color = colors['textr']
-
+					button.color = (0,255,0,255)
 
 class Board(pyglet.window.Window):
 
@@ -282,6 +281,7 @@ class Board(pyglet.window.Window):
 		"""
 		Подбирает размер окна под размер поля; изменяет отступы, если размер окна
 		изменился, чтобы поле осталось в центре. Если оконный режим — меняет размер окна.
+		Также меню присваиватся новые координаты, и обновляется расположение кнопок.
 		"""
 		self.SQUARE_SIZE = (self.height - 60)//self.BRD_H
 		self.TILE_SIZE = 0.8 * self.SQUARE_SIZE
@@ -305,8 +305,11 @@ class Board(pyglet.window.Window):
 		Снова вернулись к квадратной. Из TextWidget'а берётся введённое число, 
 		а дальше всё как и раньше.
 		Снова вызывается функция обновления размера окна, отступов, координат лейблов.
-		В стек добавляется функция, изименяющая прозрачность последнего хода каждые 1/15с.
+		В стек добавляется функция, изименяющая прозрачность последнего хода каждые 1/30с.
 		В принципе, туда можно добавить и другую анимацию.
+		При создании меню x и y передаются нулевые, потому что всё равно прямо в
+		следующей же функции они будут "обновлены". (Вероятно, можно и из аргументов 
+		убрать). orientation там стоит временно (в классе есть дефолтное положение).
 		"""
 		boardsize = int(self.boardtxt.document.text)
 		self.boardtxt.layout.delete()
@@ -319,9 +322,11 @@ class Board(pyglet.window.Window):
 # 		del self.mp_label
 		self.BRD_H = boardsize
 		self.BRD_W = boardsize
-		self.game_menu = GameMenu(x=self.margin_h + (self.BRD_H+0.5) * self.SQUARE_SIZE,
-									y=self.height - self.margin_v, height=self.height,
-									board=self, batch=self.batch_menu)
+		self.game_menu = GameMenu(x=0,#self.margin_h + (self.BRD_H+0.5) * self.SQUARE_SIZE,
+									y=0,#self.height - self.margin_v
+									height=self.height,
+									board=self, batch=self.batch_menu,
+									orientation = "vertical")
 		self.update_coordinates()
 		self.ALL_STONES = zeros([self.BRD_W, self.BRD_H])
 		self.dispatch_event('on_reqconnect')
