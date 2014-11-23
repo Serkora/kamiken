@@ -143,7 +143,8 @@ class GameMenu(object):
 	легко располагать как справа, так и снизу от поля.
 	Позволяет иметь вертикальное или горизонтальное расположение кнопок.
 	Аргументом height передаётся высота окна/экрана, чтобы соответственно изменять
-	размер шрифта (1/40 от высоты), используется в place_buttons.
+	размер шрифта (1/40 от высоты), делается это в place_buttons.
+	(self.height — lambda-функция)
 	board — доска. Нужно для создания событий по клику на клавиши.
 	batch — графический batch, в котором это меню нужно будет рисовать.
 	"""
@@ -175,30 +176,30 @@ class GameMenu(object):
 		self.buttons = [self.skipturn, self.endgame, self.settings, 
 						self.disconnect, self.quitbt]
 		
-		self.place_buttons(self.height)
+		self.place_buttons()
 	
-	def place_buttons(self, height):
+	def place_buttons(self):
 		"""
 		Располагает кнопки друг под другом или в одну строку. Размер шрифта высчитывается
 		именно тут, чтобы одной этой функцией легко перерисовывать кнопки при изменении 
 		размера окна.
-		Отправные координаты, впрочем, всё равно нужно обновлять.
 		В горизонтальном расположении первая кнопка ставится вне лупа, потому что
 		расположение кнопок зависит от предыдущей.
+		self.x() и self.y() — функции, высчитывающие "нулевую" точку меню.
 		"""
-		self.fontsize = height/40
+		self.fontsize = self.height()/40
 		if self.orientation == "vertical":
 			for i in range(0,len(self.buttons)):
 				self.buttons[i].font_size = self.fontsize
-				self.buttons[i].x = self.x
-				self.buttons[i].y = self.y - self.fontsize * (i*2)
+				self.buttons[i].x = self.x()
+				self.buttons[i].y = self.y() - self.fontsize * (i*2)
 
 		elif self.orientation == "horizontal":
-			self.buttons[0].x, self.buttons[0].y = self.x, self.y
+			self.buttons[0].x, self.buttons[0].y = self.x(), self.y()
 			self.buttons[0].font_size = self.fontsize
 			for i in range(1, len(self.buttons)):
 				self.buttons[i].font_size = self.fontsize
-				self.buttons[i].y = self.y
+				self.buttons[i].y = self.y()
 				self.buttons[i].x = self.buttons[i-1].x + \
 					self.buttons[i-1].content_width + self.fontsize
 			
@@ -286,17 +287,10 @@ class Board(pyglet.window.Window):
 		self.SQUARE_SIZE = (self.height - 60)//self.BRD_H
 		self.TILE_SIZE = 0.8 * self.SQUARE_SIZE
 		self.scale = self.TILE_SIZE/150
-# 		self.WIN_W = (self.BRD_W + 2) * self.SQUARE_SIZE
-# 		self.WIN_H = (self.BRD_H + 2) * self.SQUARE_SIZE
-# 		if not self.fullscreen:
-# 			self.width=self.WIN_W
-# 			self.height=self.WIN_H
 		self.margin_v = (self.height - self.SQUARE_SIZE*self.BRD_H) // 2
 		self.margin_h = (self.width - self.SQUARE_SIZE*self.BRD_W) // 4
 		self.labels_redraw()
-		self.game_menu.x = self.margin_h + (self.BRD_H+0.5) * self.SQUARE_SIZE
-		self.game_menu.y = self.height - self.margin_v
-		self.game_menu.place_buttons(self.height)
+		self.game_menu.place_buttons()
 		self.FADE_FLAG = False # скорее всего, курсор будет уже на другом местеЙ
 
 	def start_game(self):
@@ -307,9 +301,10 @@ class Board(pyglet.window.Window):
 		Снова вызывается функция обновления размера окна, отступов, координат лейблов.
 		В стек добавляется функция, изименяющая прозрачность последнего хода каждые 1/30с.
 		В принципе, туда можно добавить и другую анимацию.
-		При создании меню x и y передаются нулевые, потому что всё равно прямо в
-		следующей же функции они будут "обновлены". (Вероятно, можно и из аргументов 
-		убрать). orientation там стоит временно (в классе есть дефолтное положение).
+		menu_def_x/y вынесены для удобности редактирования/восприятия.
+		Используется lambda для того, чтобы menu.x (отправная точна координат отедльных
+		кнопок) было функцией, меняющей значение в зависимости от размеров окна 
+		без эксплицитного объявления этого изменения.
 		"""
 		boardsize = int(self.boardtxt.document.text)
 		self.boardtxt.layout.delete()
@@ -322,9 +317,9 @@ class Board(pyglet.window.Window):
 # 		del self.mp_label
 		self.BRD_H = boardsize
 		self.BRD_W = boardsize
-		self.game_menu = GameMenu(x=0,#self.margin_h + (self.BRD_H+0.5) * self.SQUARE_SIZE,
-									y=0,#self.height - self.margin_v
-									height=self.height,
+		menu_def_x = lambda: self.margin_h + (self.BRD_H+0.5) * self.SQUARE_SIZE
+		menu_def_y = lambda: self.height - self.margin_v
+		self.game_menu = GameMenu(menu_def_x, menu_def_y, height=lambda: self.height,
 									board=self, batch=self.batch_menu,
 									orientation = "vertical")
 		self.update_coordinates()
@@ -369,13 +364,6 @@ class Board(pyglet.window.Window):
 		pass
 	
 	def pulsation(self,trash):
-#		self.pulseopacity = 127 + 128*cos((arccos((self.pulseopacity - 127)/128))+0.5)
-# 		ac = arccos(self.pulseopacity)
-# 		cs = cos(self.pulseopacity)
-# 		self.pulseopacity = cos(ac-copysign(0.1,cos(ac+0.1)-cos(ac)))
-#		self.msg = str(round(self.pulseopacity,5))+"    "+str(round(ac,5))
-#		self.msg = str(self.pulseopacity)
-
 		self.pulseopacity = 200+55*cos(self.pulseiter)
 		self.pulseiter = (self.pulseiter+pi/10)%(2*pi)
 
