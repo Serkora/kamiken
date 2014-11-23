@@ -36,8 +36,8 @@ MSG = 'KAMI~!!'
 TILE_SIZE = 24
 SQUARE_SIZE = 30
 FONT = 'Comic Sans MS'
-WINDOW_W = BOARD_W * TILE_SIZE + 2 * TILE_SIZE
-WINDOW_H = BOARD_H * TILE_SIZE + 2 * TILE_SIZE
+WINDOW_W = int(config.get('settings', 'window_width'))
+WINDOW_H = int(config.get('settings', 'window_height'))
 BOARD_OPACITY = 40 #opacity 0 - 255
 FADE_STONE_OPACITY = 150
 PLAYER = 1.0 #1.0 - red, 2.0 - blue
@@ -136,9 +136,90 @@ class TextWidget(object):
         if self.focus:
             self.focus.caret.on_text(text)
 
+class GameMenu(object):
+	"""
+	Игровое меню. Содержит в себе все пункты меню. Передаваемые в аргументах
+	координаты являются положением верхнего левого угла, чтобы можно было 
+	легко располагать как справа, так и снизу от поля.
+	Позволяет иметь вертикальное или горизонтальное расположение кнопок.
+	Аргументом height передаётся высота окна/экрана, чтобы соответственно изменять
+	размер шрифта (1/40 от высоты), используется в place_buttons.
+	board — доска. Нужно для создания событий по клику на клавиши.
+	batch — графический batch, в котором это меню нужно будет рисовать.
+	"""
+	def __init__(self, x, y, height, board, batch, orientation = "vertical"):
+		self.orientation = orientation
+		self.x = x
+		self.y = y
+		self.batch = batch
+		self.height = height
+		self.board = board
+
+		self.skipturn = pyglet.text.Label(
+			"Skip turn", anchor_x="left", anchor_y = "top", 
+			font_name=FONT, color=colors['textb'], batch = self.batch)
+		self.endgame = pyglet.text.Label(
+			"Finish game", anchor_x="left", anchor_y = "top", 
+			font_name=FONT, color=colors['textb'], batch = self.batch)
+		self.settings = pyglet.text.Label(
+			"Settings", anchor_x="left", anchor_y = "top", 
+			font_name=FONT, color=colors['textb'], batch = self.batch)
+		self.disconnect = pyglet.text.Label(
+			"Disconnect", anchor_x="left", anchor_y = "top", 
+			font_name=FONT, color=colors['textb'], batch = self.batch)
+		self.quitbt = pyglet.text.Label(
+			"Quit", anchor_x="left", anchor_y = "top", 
+			font_name=FONT, color=colors['textb'], batch = self.batch)
+
+		
+		self.buttons = [self.skipturn, self.endgame, self.settings, 
+						self.disconnect, self.quitbt]
+		
+		self.place_buttons(self.height)
+	
+	def place_buttons(self, height):
+		"""
+		Располагает кнопки друг под другом или в одну строку. Размер шрифта высчитывается
+		именно тут, чтобы одной этой функцией легко перерисовывать кнопки при изменении 
+		размера окна.
+		Отправные координаты, впрочем, всё равно нужно обновлять.
+		"""
+		self.fontsize = height/40
+		if self.orientation == "vertical":
+			for i in range(0,len(self.buttons)):
+				self.buttons[i].font_size = self.fontsize
+				self.buttons[i].x = self.x
+				self.buttons[i].y = self.y - self.fontsize * (i*2)
+
+		elif self.orientation == "horizontal":
+			self.skipturn.x, self.skipturn.y = self.x, self.y
+			self.skipturn.font_size = self.fontsize
+			for i in range(1, len(self.buttons)):
+				self.buttons[i].font_size = self.fontsize
+				self.buttons[i].y = self.y
+				self.buttons[i].x = self.buttons[i-1].x + \
+					self.buttons[i-1].content_width + self.fontsize
+			
+	def highlight(self, x, y):
+		for button in self.buttons:
+			if button.x <= x <= button.x + button.content_width and \
+				button.y - button.content_height <= y <= button.y:
+					button.color = colors['textr']
+			else:
+				button.color = colors['textb']
+	
+	def button_press(self, x, y):
+		for button in self.buttons:
+			if button.x <= x <= button.x + button.content_width and \
+				button.y - button.content_height <= y <= button.y:
+					button.color = (255,0,0,255)
+# 			else:
+# 				button.color = colors['textr']
+
+
 class Board(pyglet.window.Window):
 
-	def __init__(self, BOARD_W, BOARD_H, MSG, TILE_SIZE, SQUARE_SIZE, FONT):
+	def __init__(self, BOARD_W, BOARD_H, WINDOW_W, WINDOW_H, MSG, TILE_SIZE, SQUARE_SIZE, FONT):
 			# Изначальные игровые параметры
 		self.player = 1
 		self.turn = 1
@@ -151,13 +232,13 @@ class Board(pyglet.window.Window):
 		self.gametype = "multiplayer"
 		self.pulseiter = 0
 			# окно и отступы
-		self.WIN_W = (self.BRD_W+2)*self.SQUARE_SIZE
-		self.WIN_H = (self.BRD_H+2)*self.SQUARE_SIZE
+		self.WIN_W = WINDOW_W
+		self.WIN_H = WINDOW_H
 		super(Board, self).__init__(width=self.WIN_W, height=self.WIN_H, 
 									caption=('Kamiken'), vsync=True)
 		self.set_fullscreen(eval(config.get('settings','fullscreen')))
 		self.margin_v = (self.height - self.SQUARE_SIZE * self.BRD_H) // 2
-		self.margin_h = (self.width - self.SQUARE_SIZE * self.BRD_W) // 2
+		self.margin_h = (self.width - self.SQUARE_SIZE * self.BRD_W) // 4
 			# графические параметры
 		self.batch_launcher = pyglet.graphics.Batch()
 		self.batch_menu = pyglet.graphics.Batch()
@@ -196,30 +277,7 @@ class Board(pyglet.window.Window):
 			"Multiplayer", font_size=15, anchor_x="center", font_name=FONT,
 			color=colors['textb'], x=self.width/2+70, y=self.height/1.6, 
 			batch = self.batch)
-	
-	def menulabels(self):
-		self.skipturn_label = pyglet.text.Label(
-			"Skip turn", font_size = 10, anchor_x="left", font_name=FONT,
-			color=colors['textb'], x=self.margin_h, y=self.margin_v/2,
-			batch = self.batch_menu)
-		self.endgame_label = pyglet.text.Label(
-			"Finish game", font_size = 10, anchor_x="left", font_name=FONT,
-			color=colors['textb'], x=self.margin_h + 70, y=self.margin_v/2,
-			batch = self.batch_menu)
-		self.settings_label = pyglet.text.Label(
-			"Settings", font_size = 10, anchor_x="left", font_name=FONT,
-			color=colors['textb'], x=self.margin_h + 150, y=self.margin_v/2,
-			batch = self.batch_menu)
-		self.disconnect_label = pyglet.text.Label(	
-			"Disconnect", font_size = 10, anchor_x="left", font_name=FONT,
-			color=colors['textb'], x=self.margin_h + 220, y=self.margin_v/2,
-			batch = self.batch_menu)
-# 		self.quit_label = pyglet.text.Label(	
-# 			"Quit", font_size = 10, anchor_x="left", font_name=FONT,
-# 			color=colors['textb'], x=self.margin_h + 320, y=self.margin_v/2,
-# 			batch = self.batch_menu)
-											
-	
+		
 	def update_coordinates(self):
 		"""
 		Подбирает размер окна под размер поля; изменяет отступы, если размер окна
@@ -228,14 +286,17 @@ class Board(pyglet.window.Window):
 		self.SQUARE_SIZE = (self.height - 60)//self.BRD_H
 		self.TILE_SIZE = 0.8 * self.SQUARE_SIZE
 		self.scale = self.TILE_SIZE/150
-		self.WIN_W = (self.BRD_W + 2) * self.SQUARE_SIZE
-		self.WIN_H = (self.BRD_H + 2) * self.SQUARE_SIZE
-		if not self.fullscreen:
-			self.width=self.WIN_W
-			self.height=self.WIN_H
+# 		self.WIN_W = (self.BRD_W + 2) * self.SQUARE_SIZE
+# 		self.WIN_H = (self.BRD_H + 2) * self.SQUARE_SIZE
+# 		if not self.fullscreen:
+# 			self.width=self.WIN_W
+# 			self.height=self.WIN_H
 		self.margin_v = (self.height - self.SQUARE_SIZE*self.BRD_H) // 2
-		self.margin_h = (self.width - self.SQUARE_SIZE*self.BRD_W) // 2
+		self.margin_h = (self.width - self.SQUARE_SIZE*self.BRD_W) // 4
 		self.labels_redraw()
+		self.game_menu.x = self.margin_h + (self.BRD_H+0.5) * self.SQUARE_SIZE
+		self.game_menu.y = self.height - self.margin_v
+		self.game_menu.place_buttons(self.height)
 		self.FADE_FLAG = False # скорее всего, курсор будет уже на другом местеЙ
 
 	def start_game(self):
@@ -258,8 +319,10 @@ class Board(pyglet.window.Window):
 # 		del self.mp_label
 		self.BRD_H = boardsize
 		self.BRD_W = boardsize
+		self.game_menu = GameMenu(x=self.margin_h + (self.BRD_H+0.5) * self.SQUARE_SIZE,
+									y=self.height - self.margin_v, height=self.height,
+									board=self, batch=self.batch_menu)
 		self.update_coordinates()
-		self.menulabels()
 		self.ALL_STONES = zeros([self.BRD_W, self.BRD_H])
 		self.dispatch_event('on_reqconnect')
 		self.state = "playing"
@@ -393,7 +456,6 @@ class Board(pyglet.window.Window):
 		self.draw_game()
 		score_r = len(where(self.ALL_STONES==3)[0])
 		score_b = len(where(self.ALL_STONES==4)[1])
-		testb = pyglet.graphics.Batch()
 		self.msg = "Red: "+str(score_r)+"  Blue: "+str(score_b)
 
 	def make_move(self,x1,y1,pl):
@@ -461,47 +523,7 @@ class Board(pyglet.window.Window):
 				self.FADE_FLAG = True
 		else: 
 			self.FADE_FLAG = False
-
-	def mouse_motion_menu(self,x,y):
-		"""
-		Проверяет, находится ли курсор примерно в пространстве, где кнопки меню 
-		находятся (чтобы лишний раз не присваиваеть одно и то же значение), и если
-		находятся, то уже меняет цвет соответствующего лейбла.
-		elif нужен, чтобы лейбл менял цвет обратно на синий в случае, когда
-		курсор уводится наверх, соответственно эта функция делает что-то когда
-		курсор находится в диапазоне от -20 пикселей до +20 пикселей от низа
-		и верха лейблов меню.
-		"""
-		if self.margin_h <= x <= self.width - self.margin_h and \
-			self.skipturn_label.y <= y <= self.skipturn_label.y + \
-				self.skipturn_label.content_height:
-					if self.skipturn_label.x <= x <= self.skipturn_label.x + \
-						self.skipturn_label.content_width:
-							self.skipturn_label.color = colors['textr']
-					else:
-						self.skipturn_label.color = colors['textb']
-					if self.endgame_label.x <= x <= self.endgame_label.x + \
-						self.endgame_label.content_width:
-							self.endgame_label.color = colors['textr']
-					else:
-						self.endgame_label.color = colors['textb']
-					if self.settings_label.x <= x <= self.settings_label.x + \
-						self.settings_label.content_width:
-							self.settings_label.color = colors['textr']
-					else:
-						self.settings_label.color = colors['textb']
-					if self.disconnect_label.x <= x <= self.disconnect_label.x + \
-						self.disconnect_label.content_width:
-							self.disconnect_label.color = colors['textr']
-					else:
-						self.disconnect_label.color = colors['textb']
-		elif self.skipturn_label.y - 20 <= y <= self.skipturn_label.y + \
-				self.skipturn_label.content_height + 20:
-					self.skipturn_label.color = colors['textb']
-					self.endgame_label.color = colors['textb']
-					self.settings_label.color = colors['textb']
-					self.disconnect_label.color = colors['textb']
-			
+		
 	def on_mouse_press(self, x, y, button, modifiers):
 		"""
 		Если клик был по полю для ввода размера доски, то появляется каретка и
@@ -544,6 +566,7 @@ class Board(pyglet.window.Window):
 					self.msg = "Waiting for second player..."
 				
 		elif button == mouse.LEFT and self.state == "playing":
+			self.game_menu.button_press(x,y)
 			x1 = (x - self.margin_h)//self.SQUARE_SIZE
 			y1 = (y - self.margin_v)//self.SQUARE_SIZE
 			if 0 <= y1 < self.BRD_H and 0 <= x1 < self.BRD_W:
@@ -562,8 +585,8 @@ class Board(pyglet.window.Window):
 		"""
 		self.msg = str(x)+"  "+str(y)
 		if self.state == "playing":
-			self.mouse_motion_play(x,y)
-			self.mouse_motion_menu(x,y)
+# 			self.mouse_motion_play(x,y)
+			self.game_menu.highlight(x,y)
 		elif self.state == "setup":
 			self.mouse_motion_setup(x,y)	
 	
@@ -629,6 +652,6 @@ def texture_set_mag_filter_nearest( texture ): #функция, преобраз
 	glBindTexture( texture.target, 0 )		
 
 if __name__ == "__main__":
-	window = Board(BOARD_W, BOARD_H, MSG, TILE_SIZE, SQUARE_SIZE, FONT)
+	window = Board(BOARD_W, BOARD_H, WINDOW_W, WINDOW_H, MSG, TILE_SIZE, SQUARE_SIZE, FONT)
 	pyglet.clock.schedule(lambda x: None)
 	pyglet.app.run()
