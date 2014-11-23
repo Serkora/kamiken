@@ -1,3 +1,4 @@
+#!/Library/Frameworks/Python.framework/Versions/3.4/bin/python3.4
 # -*- coding: UTF-8 -*-
 '''
 Kamiken OpenGl v0.0.1
@@ -19,9 +20,9 @@ from OpenGL.GLUT import * #<==Needed for GLUT calls
 Переменные 
 '''
 BOARD_W = 5
-BOARD_H = 5
+BOARD_H = 1
 MSG = 'KAMI~!!'
-TILE_SIZE = 30 
+TILE_SIZE = 300
 FONT = 'Comic Sans MS'
 WINDOW_W = BOARD_W * TILE_SIZE + 2 * TILE_SIZE
 WINDOW_H = BOARD_H * TILE_SIZE + 2 * TILE_SIZE

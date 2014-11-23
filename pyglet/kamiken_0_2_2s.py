@@ -1,7 +1,7 @@
 #!/Library/Frameworks/Python.framework/Versions/3.4/bin/python3.4
 #  - * -  coding: UTF - 8  - * - 
 '''
-Kamiken v0.2.1
+Kamiken v0.2.2
 '''
 
 import pyglet
@@ -36,8 +36,9 @@ MSG = 'KAMI~!!'
 TILE_SIZE = 24
 SQUARE_SIZE = 30
 FONT = 'Comic Sans MS'
-WINDOW_W = int(config.get('settings', 'window_width'))
-WINDOW_H = int(config.get('settings', 'window_height'))
+WINDOW_W = int(config.get('settings', 'resolution').split("x")[0])
+WINDOW_H = int(config.get('settings', 'resolution').split("x")[1])
+FULLSCREEN = eval(config.get('settings','fullscreen'))
 BOARD_OPACITY = 40 #opacity 0 - 255
 FADE_STONE_OPACITY = 150
 PLAYER = 1.0 #1.0 - red, 2.0 - blue
@@ -97,6 +98,20 @@ tilehits = {	(1, 0)	: 3,
 				(2, 4)	: 4,
 				(2, 5)	: 5 		  		}
 
+def write_config(board):
+	"""
+	Записывает в конфиг последние настройки размера окна и был ли выбран
+	полноэкранный режим. Если был полноэкранный режим, то размеры окна не изменяются,
+	для удобного выхода в оконный режим, а не созданий окна с разрешением экрана.
+	"""
+	config['settings']['fullscreen'] = str(board.fullscreen)
+	if not board.fullscreen:
+		config['settings']['resolution'] = str(board.width)+"x"+str(board.height)
+	with open('config.ini','w') as configfile:
+		config.write(configfile)
+
+
+
 class TextWidget(object):
     """
     Поле ввода текста. Работает магическим образом, так как некоторые вещи,
@@ -145,6 +160,8 @@ class GameMenu(object):
 	Аргументом height передаётся высота окна/экрана, чтобы соответственно изменять
 	размер шрифта (1/40 от высоты), делается это в place_buttons.
 	(self.height — lambda-функция)
+	self.x и self.y — функции определения отправной точки, передаются в 
+	виде lambda-функции при создании объекта этого класса.
 	board — доска. Нужно для создания событий по клику на клавиши.
 	batch — графический batch, в котором это меню нужно будет рисовать.
 	"""
@@ -155,28 +172,24 @@ class GameMenu(object):
 		self.batch = batch
 		self.height = height
 		self.board = board
-
-		self.skipturn = pyglet.text.Label(
-			"Skip turn", anchor_x="left", anchor_y = "top", 
-			font_name=FONT, color=colors['textb'], batch = self.batch)
-		self.endgame = pyglet.text.Label(
-			"Finish game", anchor_x="left", anchor_y = "top", 
-			font_name=FONT, color=colors['textb'], batch = self.batch)
-		self.settings = pyglet.text.Label(
-			"Settings", anchor_x="left", anchor_y = "top", 
-			font_name=FONT, color=colors['textb'], batch = self.batch)
-		self.disconnect = pyglet.text.Label(
-			"Disconnect", anchor_x="left", anchor_y = "top", 
-			font_name=FONT, color=colors['textb'], batch = self.batch)
-		self.quitbt = pyglet.text.Label(
-			"Quit", anchor_x="left", anchor_y = "top", 
-			font_name=FONT, color=colors['textb'], batch = self.batch)
-
-		
-		self.buttons = [self.skipturn, self.endgame, self.settings, 
-						self.disconnect, self.quitbt]
-		
+		self.create_buttons()
 		self.place_buttons()
+	
+	def create_buttons(self):
+		"""
+		В self.button_names записаны названия (текст) кнопок, далее for луп создаёт
+		по кнопкке на каждый из элементов списка, присваивая атрибут в видео строчного
+		написания текста кнопки без пробелов. Затем кнопка добавляюется в список уже
+		пиглетовских объектов, которые затем используется в лупах расположения.
+		"""
+		self.button_names = ['Skip turn', 'Save game', 'Finish game', 'Settings',
+								'Disconnect', 'Quit']
+		self.buttons = []
+		for button in self.button_names:
+			setattr(self, button.lower().replace(" ",""), pyglet.text.Label(
+				button, anchor_x="left", anchor_y="top", font_name=FONT,
+				color=colors['textb'], batch=self.batch))
+			self.buttons.append(eval("self."+button.lower().replace(" ","")))
 	
 	def place_buttons(self):
 		"""
@@ -204,6 +217,9 @@ class GameMenu(object):
 					self.buttons[i-1].content_width + self.fontsize
 			
 	def highlight(self, x, y):
+		"""
+		Меняет цвет выделенного мышкой пункта меню.
+		"""
 		for button in self.buttons:
 			if button.x <= x <= button.x + button.content_width and \
 				button.y - button.content_height <= y <= button.y:
@@ -212,12 +228,36 @@ class GameMenu(object):
 				button.color = colors['textb']
 	
 	def button_press(self, x, y):
+		"""
+		Если была нажата какая-то кнопка, передаёт текст этой кнопки в отдельную
+		функцию, которая и будет совершать действие, в зависимости от кнопки.
+		"""
 		for button in self.buttons:
 			if button.x <= x <= button.x + button.content_width and \
 				button.y - button.content_height <= y <= button.y:
-					button.color = (0,255,0,255)
+					self.button_action(button.text)
+
+	def button_action(self, button):
+		"""
+		По названию (тексту) кнопки производится соответствующая операция.
+		"""
+		if button == "Skip turn":
+			pass
+		elif button == "Save game":
+			pass
+		elif button == "Finish game":
+			pass
+		elif button == "Settings":
+			pass
+		elif button == "Disconnect":
+			pass
+		elif button == "Quit":
+			self.board._quit()
+
 
 class Board(pyglet.window.Window):
+
+		###### Важные и/или "системные" функции ######
 
 	def __init__(self, BOARD_W, BOARD_H, WINDOW_W, WINDOW_H, MSG, TILE_SIZE, SQUARE_SIZE, FONT):
 			# Изначальные игровые параметры
@@ -236,7 +276,7 @@ class Board(pyglet.window.Window):
 		self.WIN_H = WINDOW_H
 		super(Board, self).__init__(width=self.WIN_W, height=self.WIN_H, 
 									caption=('Kamiken'), vsync=True)
-		self.set_fullscreen(eval(config.get('settings','fullscreen')))
+		self.set_fullscreen(FULLSCREEN)
 		self.margin_v = (self.height - self.SQUARE_SIZE * self.BRD_H) // 2
 		self.margin_h = (self.width - self.SQUARE_SIZE * self.BRD_W) // 4
 			# графические параметры
@@ -258,115 +298,11 @@ class Board(pyglet.window.Window):
 			batch = self.batch)
 		self.startuplabels()
 
-	
-	def startuplabels(self):
-		"""
-		Создаёт лейблы/виджеты настроек.
-		"""
-		self.brdlabel = pyglet.text.Label(
-			"Board size", font_size=15, anchor_x="center", font_name=FONT,
-			color=colors['textb'], x=self.width/2 - 40, y=self.height/1.35, 
-			batch = self.batch)
-		self.boardtxt = TextWidget(str(BOARD_H), self.width/2 + 60, self.height/1.35 - 7.5, 
-										50, self.batch)
-		self.sp_label = pyglet.text.Label(
-			"Single Player", font_size=15, anchor_x="center", font_name=FONT,
-			color=colors['textb'], x=self.width/2-70, y=self.height/1.6, 
-			batch = self.batch)
-		self.mp_label = pyglet.text.Label(
-			"Multiplayer", font_size=15, anchor_x="center", font_name=FONT,
-			color=colors['textb'], x=self.width/2+70, y=self.height/1.6, 
-			batch = self.batch)
-		
-	def update_coordinates(self):
-		"""
-		Подбирает размер окна под размер поля; изменяет отступы, если размер окна
-		изменился, чтобы поле осталось в центре. Если оконный режим — меняет размер окна.
-		Также меню присваиватся новые координаты, и обновляется расположение кнопок.
-		"""
-		self.SQUARE_SIZE = (self.height - 60)//self.BRD_H
-		self.TILE_SIZE = 0.8 * self.SQUARE_SIZE
-		self.scale = self.TILE_SIZE/150
-		self.margin_v = (self.height - self.SQUARE_SIZE*self.BRD_H) // 2
-		self.margin_h = (self.width - self.SQUARE_SIZE*self.BRD_W) // 4
-		self.labels_redraw()
-		self.game_menu.place_buttons()
-		self.FADE_FLAG = False # скорее всего, курсор будет уже на другом местеЙ
+	def _quit(self):
+		write_config(self)
+		self.close()
 
-	def start_game(self):
-		"""
-		Из __init__ было сюда перенесено, чтобы изменить окно/доску после выбора в меню.
-		Снова вернулись к квадратной. Из TextWidget'а берётся введённое число, 
-		а дальше всё как и раньше.
-		Снова вызывается функция обновления размера окна, отступов, координат лейблов.
-		В стек добавляется функция, изименяющая прозрачность последнего хода каждые 1/30с.
-		В принципе, туда можно добавить и другую анимацию.
-		menu_def_x/y вынесены для удобности редактирования/восприятия.
-		Используется lambda для того, чтобы menu.x (отправная точна координат отедльных
-		кнопок) было функцией, меняющей значение в зависимости от размеров окна 
-		без эксплицитного объявления этого изменения.
-		"""
-		boardsize = int(self.boardtxt.document.text)
-		self.boardtxt.layout.delete()
-		self.brdlabel.delete()
-		self.sp_label.delete()
-		self.mp_label.delete()
-		del self.boardtxt
-		del self.brdlabel
-# 		del self.sp_label
-# 		del self.mp_label
-		self.BRD_H = boardsize
-		self.BRD_W = boardsize
-		menu_def_x = lambda: self.margin_h + (self.BRD_H+0.5) * self.SQUARE_SIZE
-		menu_def_y = lambda: self.height - self.margin_v
-		self.game_menu = GameMenu(menu_def_x, menu_def_y, height=lambda: self.height,
-									board=self, batch=self.batch_menu,
-									orientation = "vertical")
-		self.update_coordinates()
-		self.ALL_STONES = zeros([self.BRD_W, self.BRD_H])
-		self.dispatch_event('on_reqconnect')
-		self.state = "playing"
-		pyglet.clock.schedule_interval(self.pulsation,1/30)
-
-	def labels_redraw(self):
-		"""
-		Проверяет, какие из лейблов/полей текста присутствуют (какие-то удаляются 
-		после началаигры, какие-то, наоборот, добавляются) и ставит на нужное место 
-		при изменении размера окна или переходе в полноэкранный режим.
-		"""
-		if hasattr(self, 'label'):
-			self.label.x = self.width//2
-			self.label.y = self.height - 25
-		if hasattr(self, 'boardtxt'):
-			self.boardtxt.layout.x = self.width//2 + 60
-			self.boardtxt.layout.y = self.height/1.35 - 10
-		if hasattr(self, 'brdlabel'):
-			self.brdlabel.x = self.width/2 - 40
-			self.brdlabel.y = self.height/1.35
-		if hasattr(self, 'sp_label'):
-			self.sp_label.x = self.width/2-70
-			self.sp_label.y = self.height/1.6
-		if hasattr(self, 'mp_label'):
-			self.mp_label.x = self.width/2+70
-			self.mp_label.y = self.height/1.6
-		if hasattr(self, 'skipturn_label'):
-			self.skipturn_label.x = self.margin_h
-			self.skipturn_label.y = self.margin_v/2
-		if hasattr(self, 'endgame_label'):
-			self.endgame_label.x = self.margin_h + 70
-			self.endgame_label.y = self.margin_v/2
-		if hasattr(self, 'settings_label'):
-			self.settings_label.x = self.margin_h + 150
-			self.settings_label.y = self.margin_v/2
-		if hasattr(self, 'disconnect_label'):
-			self.disconnect_label.x= self.margin_h + 220
-			self.disconnect_label.y = self.margin_v/2
-		pass
-	
-	def pulsation(self,trash):
-		self.pulseopacity = 200+55*cos(self.pulseiter)
-		self.pulseiter = (self.pulseiter+pi/10)%(2*pi)
-
+		###### Графические функции ######
 	
 	def on_draw(self):
 		"""
@@ -451,6 +387,113 @@ class Board(pyglet.window.Window):
 		score_b = len(where(self.ALL_STONES==4)[1])
 		self.msg = "Red: "+str(score_r)+"  Blue: "+str(score_b)
 
+	def pulsation(self,trash):
+		self.pulseopacity = 200+55*cos(self.pulseiter)
+		self.pulseiter = (self.pulseiter+pi/10)%(2*pi)
+
+		###### Добавление или удаление элементов, перерасчёт координат ######
+	
+	def startuplabels(self):
+		"""
+		Создаёт лейблы/виджеты настроек.
+		"""
+		self.brdlabel = pyglet.text.Label(
+			"Board size", font_size=15, anchor_x="center", font_name=FONT,
+			color=colors['textb'], x=self.width/2 - 40, y=self.height/1.35, 
+			batch = self.batch)
+		self.boardtxt = TextWidget(str(BOARD_H), self.width/2 + 60, self.height/1.35 - 7.5, 
+										50, self.batch)
+		self.sp_label = pyglet.text.Label(
+			"Single Player", font_size=15, anchor_x="center", font_name=FONT,
+			color=colors['textb'], x=self.width/2-70, y=self.height/1.6, 
+			batch = self.batch)
+		self.mp_label = pyglet.text.Label(
+			"Multiplayer", font_size=15, anchor_x="center", font_name=FONT,
+			color=colors['textb'], x=self.width/2+70, y=self.height/1.6, 
+			batch = self.batch)
+		
+	def update_coordinates(self):
+		"""
+		Подбирает размер окна под размер поля; изменяет отступы, если размер окна
+		изменился, чтобы поле осталось в центре. Если оконный режим — меняет размер окна.
+		Также меню присваиватся новые координаты, и обновляется расположение кнопок.
+		"""
+		self.SQUARE_SIZE = (self.height - 60)//self.BRD_H
+		self.TILE_SIZE = 0.8 * self.SQUARE_SIZE
+		self.scale = self.TILE_SIZE/150
+		self.margin_v = (self.height - self.SQUARE_SIZE*self.BRD_H) // 2
+		self.margin_h = (self.width - self.SQUARE_SIZE*self.BRD_W) // 4
+		self.labels_redraw()
+		if hasattr(self, 'game_menu'):
+			self.game_menu.place_buttons()
+		self.FADE_FLAG = False # скорее всего, курсор будет уже на другом местеЙ
+
+	def label_update(self):
+		if self.turn==self.player:
+			self.msg = 'Your turn!'
+		else:
+			self.msg = "Opponent's turn!"
+
+	def labels_redraw(self):
+		"""
+		Проверяет, какие из лейблов/полей текста присутствуют (какие-то удаляются 
+		после началаигры, какие-то, наоборот, добавляются) и ставит на нужное место 
+		при изменении размера окна или переходе в полноэкранный режим.
+		"""
+		if hasattr(self, 'label'):
+			self.label.x = self.width//2
+			self.label.y = self.height - 25
+		if hasattr(self, 'boardtxt'):
+			self.boardtxt.layout.x = self.width//2 + 60
+			self.boardtxt.layout.y = self.height/1.35 - 10
+		if hasattr(self, 'brdlabel'):
+			self.brdlabel.x = self.width/2 - 40
+			self.brdlabel.y = self.height/1.35
+		if hasattr(self, 'sp_label'):
+			self.sp_label.x = self.width/2-70
+			self.sp_label.y = self.height/1.6
+		if hasattr(self, 'mp_label'):
+			self.mp_label.x = self.width/2+70
+			self.mp_label.y = self.height/1.6
+		pass
+
+		###### Игровые функции ######
+
+	def start_game(self):
+		"""
+		Из __init__ было сюда перенесено, чтобы изменить окно/доску после выбора в меню.
+		Снова вернулись к квадратной. Из TextWidget'а берётся введённое число, 
+		а дальше всё как и раньше.
+		Снова вызывается функция обновления размера окна, отступов, координат лейблов.
+		В стек добавляется функция, изименяющая прозрачность последнего хода каждые 1/30с.
+		В принципе, туда можно добавить и другую анимацию.
+		menu_def_x/y вынесены для удобности редактирования/восприятия.
+		Используется lambda для того, чтобы menu.x (отправная точна координат отедльных
+		кнопок) было функцией, меняющей значение в зависимости от размеров окна 
+		без эксплицитного объявления этого изменения.
+		"""
+		boardsize = int(self.boardtxt.document.text)
+		self.boardtxt.layout.delete()
+		self.brdlabel.delete()
+		self.sp_label.delete()
+		self.mp_label.delete()
+		del self.boardtxt
+		del self.brdlabel
+# 		del self.sp_label
+# 		del self.mp_label
+		self.BRD_H = boardsize
+		self.BRD_W = boardsize
+		menu_def_x = lambda: self.margin_h + (self.BRD_H+0.5) * self.SQUARE_SIZE
+		menu_def_y = lambda: self.height - self.margin_v
+		self.game_menu = GameMenu(menu_def_x, menu_def_y, height=lambda: self.height,
+									board=self, batch=self.batch_menu,
+									orientation = "vertical")
+		self.update_coordinates()
+		self.ALL_STONES = zeros([self.BRD_W, self.BRD_H])
+		self.dispatch_event('on_reqconnect')
+		self.state = "playing"
+		pyglet.clock.schedule_interval(self.pulsation,1/30)
+	
 	def make_move(self,x1,y1,pl):
 		"""
 		Проверяет, действитеьно ли сейчас ход того игрока, кем была вызвана функция,
@@ -475,15 +518,6 @@ class Board(pyglet.window.Window):
 		self.pulse_stone = (x1,y1)
 		self.label_update()
 
-	def on_movereceive(event,self,player,x,y):
-		"""
-		'self' стоит не первым из - за того, что событие вызывается извне и сам класс
-		доски вообще в явном виде передаётся при создании события.
-		"""
-		if player==0:
-			self.label_update()
-		self.make_move(x,y,player)
-
 	def mouse_motion_setup(self,x,y):
 		"""
 		Следит за курсором и выставляет номер игрока, если курсор наводится на один 
@@ -499,10 +533,9 @@ class Board(pyglet.window.Window):
 			self.player = 2
 
 	def mouse_motion_play(self,x,y):
-		if (self.margin_h <= x < self.width - self.margin_h) and (self.margin_v <= y <
-				self.height - self.margin_v):
-			x1 = (x - self.margin_h)//self.SQUARE_SIZE
-			y1 = (y - self.margin_v)//self.SQUARE_SIZE
+		x1 = (x - self.margin_h)//self.SQUARE_SIZE
+		y1 = (y - self.margin_v)//self.SQUARE_SIZE
+		if 0 <= y1 < self.BRD_H and 0 <= x1 < self.BRD_W:
 			if self.ALL_STONES[y1,x1]%(self.player + 2)==0 and self.turn==self.player:
 				"""
 				Остаток от деления на номер игрока. Так что рисует только поверх пустой
@@ -516,59 +549,83 @@ class Board(pyglet.window.Window):
 				self.FADE_FLAG = True
 		else: 
 			self.FADE_FLAG = False
-		
-	def on_mouse_press(self, x, y, button, modifiers):
+	
+	def mouse_press_setup(self,x,y):
 		"""
 		Если клик был по полю для ввода размера доски, то появляется каретка и
 		можно изменять текст. Если вне — каретка пропадает, писать нельзя.
 		Если был клик по любому из камней выбора игрока, начинается игра (номер игрока
 		уже выбран при наведении курсора на камень), запускаются функции изменения 
 		размера доски, окна и т.д.
+		"""
+		if self.boardtxt.hit_test(x, y):
+			self.boardtxt.focus = True
+			self.boardtxt.caret.visible = True
+		else: 
+			self.boardtxt.focus = None
+			self.boardtxt.caret.visible = False
+
+		xp1 = self.width//2 - self.TILE_SIZE * 4.5
+		yp1 = self.height//2.5 - self.TILE_SIZE * 1.5
+		xp2 = self.width//2 + self.TILE_SIZE * 1.5
+		yp2 = self.height//2.5 - self.TILE_SIZE * 1.5
+
+		xsp = self.sp_label.x - self.sp_label.content_width/2
+		ysp = self.sp_label.y - self.sp_label.content_height/2
+		xmp = self.mp_label.x - self.mp_label.content_width/2
+		ymp = self.mp_label.y - self.mp_label.content_height/2
+
+		if xsp <= x <= xsp + self.sp_label.content_width \
+			and ysp <= y <= ysp + self.sp_label.content_height:
+				self.gametype = "singleplayer"
+		elif xmp <= x <= xmp + self.mp_label.content_width \
+			and ymp <= y <= ymp + self.mp_label.content_height:
+				self.gametype = "multiplayer"
+		
+		if xp1 <= x <= xp1 + self.TILE_SIZE * 3 and yp1 <= y <= yp1 + self.TILE_SIZE * 3 \
+			or xp2 <= x <= xp2 + self.TILE_SIZE * 3 and yp2 <= y <= yp2 + self.TILE_SIZE * 3:
+				self.start_game()
+				self.msg = "Waiting for second player..."
+	
+	def mouse_press_play(self,x,y):
+		"""
 		При ходе создаётся событие, которе при наличии сетевого клиента перехватывается
 		и высылает ход на сервер. Повторяется 5 раз с интервалом в 100мс.
 		Если клиента нет, то ничего не происходит.
 		"""
-		if button == mouse.LEFT and self.state == "setup":
-			if self.boardtxt.hit_test(x, y):
-				self.boardtxt.focus = True
-				self.boardtxt.caret.visible = True
-			else: 
-				self.boardtxt.focus = None
-				self.boardtxt.caret.visible = False
-			
-			xp1 = self.width//2 - self.TILE_SIZE * 4.5
-			yp1 = self.height//2.5 - self.TILE_SIZE * 1.5
-			xp2 = self.width//2 + self.TILE_SIZE * 1.5
-			yp2 = self.height//2.5 - self.TILE_SIZE * 1.5
-			
-			xsp = self.sp_label.x - self.sp_label.content_width/2
-			ysp = self.sp_label.y - self.sp_label.content_height/2
-			xmp = self.mp_label.x - self.mp_label.content_width/2
-			ymp = self.mp_label.y - self.mp_label.content_height/2
-			
-			if xsp <= x <= xsp + self.sp_label.content_width \
-				and ysp <= y <= ysp + self.sp_label.content_height:
-					self.gametype = "singleplayer"
-			elif xmp <= x <= xmp + self.mp_label.content_width \
-				and ymp <= y <= ymp + self.mp_label.content_height:
-					self.gametype = "multiplayer"
-					
-			if xp1 <= x <= xp1 + self.TILE_SIZE * 3 and yp1 <= y <= yp1 + self.TILE_SIZE * 3 \
-				or xp2 <= x <= xp2 + self.TILE_SIZE * 3 and yp2 <= y <= yp2 + self.TILE_SIZE * 3:
-					self.start_game()
-					self.msg = "Waiting for second player..."
-				
-		elif button == mouse.LEFT and self.state == "playing":
-			self.game_menu.button_press(x,y)
-			x1 = (x - self.margin_h)//self.SQUARE_SIZE
-			y1 = (y - self.margin_v)//self.SQUARE_SIZE
-			if 0 <= y1 < self.BRD_H and 0 <= x1 < self.BRD_W:
-				if self.ALL_STONES[y1,x1]%(self.player + 2) == 0 and self.turn == self.player:
-					self.make_move(x1,y1,self.player)
-					for i in range(0,5):
-						pyglet.clock.schedule_once(
-						lambda x: self.dispatch_event('on_mademove',self.player,x1,y1), (i*0.1)
-						)
+		self.game_menu.button_press(x,y)
+		x1 = (x - self.margin_h)//self.SQUARE_SIZE
+		y1 = (y - self.margin_v)//self.SQUARE_SIZE
+		if 0 <= y1 < self.BRD_H and 0 <= x1 < self.BRD_W:
+			if self.ALL_STONES[y1,x1]%(self.player + 2) == 0 and self.turn == self.player:
+				self.make_move(x1,y1,self.player)
+				for i in range(0,5):
+					pyglet.clock.schedule_once(
+					lambda x: self.dispatch_event('on_mademove',self.player,x1,y1), (i*0.1)
+					)
+
+		###### Обработчики событий ######
+
+	def on_movereceive(event,self,player,x,y):
+		"""
+		'self' стоит не первым из - за того, что событие вызывается извне и сам класс
+		доски вообще в явном виде передаётся при создании события.
+		"""
+		if player!=0 and x>0 and y>0:
+			self.make_move(x,y,player)
+		elif x == 0 and y == 0:
+			self.turn = self.turn*2%3
+		elif player==0:
+			self.label_update()
+		
+	def on_mouse_press(self, x, y, button, modifiers):
+		"""
+		В зависимости от этапа игры по клику вызываются разные функции.
+		"""
+		if button == mouse.LEFT and self.state == "playing":
+			self.mouse_press_play(x,y) 
+		elif button == mouse.LEFT and self.state == "setup":
+			self.mouse_press_setup(x,y)
 
 	def on_mouse_motion(self, x, y, dx, dy):
 		"""
@@ -578,7 +635,7 @@ class Board(pyglet.window.Window):
 		"""
 		self.msg = str(x)+"  "+str(y)
 		if self.state == "playing":
-# 			self.mouse_motion_play(x,y)
+			self.mouse_motion_play(x,y)
 			self.game_menu.highlight(x,y)
 		elif self.state == "setup":
 			self.mouse_motion_setup(x,y)	
@@ -601,7 +658,7 @@ class Board(pyglet.window.Window):
 
 	def on_key_press(self, symbol, modifiers):
 		if symbol == key.ESCAPE:
-			self.close()
+			self._quit()
 		if symbol == key.RETURN:
 			self.set_fullscreen(self.fullscreen^True)
 			self.update_coordinates()
@@ -610,16 +667,14 @@ class Board(pyglet.window.Window):
 			self.msg = "Waiting for second player..."
 		if symbol == key.E and key.MOD_SHIFT: 	# Конец игры
 			self.state = "finish"
-		if symbol == key.Q and key.MOD_SHIFT: 	# Для аутизм - режима
+		if symbol == key.Q and key.MOD_SHIFT: 	# Для аутизм-режима
 			self.player = self.player * 2%3
 		if symbol == key.T and key.MOD_SHIFT:	# Для тестов. 
+#			self.height = self.height * 1.5
+			self.game_menu.skipturn.delete()
+#			self.game_menu.skipturn.batch = None
+			self.game_menu.buttons.remove(self.game_menu.skipturn)
 			pass
-						
-	def label_update(self):
-		if self.turn==self.player:
-			self.msg = 'Your turn!'
-		else:
-			self.msg = "Opponent's turn!"
 	
 
 
