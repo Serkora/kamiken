@@ -267,7 +267,7 @@ class Board(pyglet.window.Window):
 		self.SQUARE_SIZE = SQUARE_SIZE
 		self.BRD_H = BOARD_H
 		self.BRD_W = BOARD_W
-		self.scale = self.TILE_SIZE/r_stone.width
+		self.scale = (self.TILE_SIZE/r_stone.width)
 		self.state = "setup" # после коннекта на playing изменяется
 		self.gametype = "multiplayer"
 		self.pulseiter = 0
@@ -341,7 +341,7 @@ class Board(pyglet.window.Window):
 						       self.FADE_X, self.FADE_Y,
 						       batch = self.batch_fade)
 		self.fade_stone.opacity = FADE_STONE_OPACITY
-		self.fade_stone.scale = self.scale
+		self.fade_stone.scale = self.scale*0.5
 		for i in range(self.BRD_H):
 			for j in range(self.BRD_W):
 				x_stone = (i + 0.5) * self.SQUARE_SIZE + self.margin_h
@@ -350,7 +350,7 @@ class Board(pyglet.window.Window):
 					new_stone = pyglet.sprite.Sprite(tiles[self.ALL_STONES[j,i]],
 									 x_stone, y_stone,
 									 batch=self.batch         )
-					new_stone.scale = self.scale
+					new_stone.scale = self.scale*0.5
 					if (i,j) == self.pulse_stone:
 						new_stone.opacity = self.pulseopacity
 					else:
