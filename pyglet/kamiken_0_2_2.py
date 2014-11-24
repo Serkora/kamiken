@@ -358,7 +358,8 @@ class Board(pyglet.window.Window):
 					if (i,j) == self.pulse_stone:
 						new_stone.opacity = self.pulse_opacity
 					else:
-						new_stone.opacity = opacity[self.ALL_STONES[j,i]]
+						try: new_stone.opacity = opacity[self.ALL_STONES[j,i]]
+						except: self.msg = "YOU HAVE WON THE LOTTERY!"
 					stones.append(new_stone)
 		self.batch_game.draw()
 		self.batch_menu.draw()
