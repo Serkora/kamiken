@@ -54,8 +54,6 @@ r_board = pyglet.resource.image( config.get('images','red_board')	)
 b_board = pyglet.resource.image( config.get('images','blue_board')	)
 mp_select = pyglet.resource.image( config.get('images','mp_select')	)
 sp_select = pyglet.resource.image( config.get('images','sp_select')	)
-#r_point = pyglet.resource.image( config.get('images','red_point')	)
-#b_point = pyglet.resource.image( config.get('images','blue_point')	)
 
 # Выставляет привязку начала координат к центрам спрайтов
 board.anchor_x, board.anchor_y = board.width//2, board.height//2
@@ -110,6 +108,10 @@ def write_config(board):
 	with open('config.ini','w') as configfile:
 		config.write(configfile)
 
+def texture_set_mag_filter_nearest( texture ): #функция, преобразующая изображение в текстуру OpenGL со всякими фильтрами
+	glBindTexture( texture.target, texture.id  )
+	glTexParameteri( texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST )
+	glBindTexture( texture.target, 0 )		
 
 
 class TextWidget(object):
@@ -674,11 +676,6 @@ class Board(pyglet.window.Window):
 		if symbol == key.Q and key.MOD_SHIFT: 	# Для аутизм-режима
 			self.player = self.player * 2%3
 		if symbol == key.T and key.MOD_SHIFT:	# Для тестов. 
-#			self.height = self.height * 1.5
-#			self.game_menu.skipturn.delete()
-#			self.game_menu.skipturn.batch = None
-#			self.game_menu.buttons.remove(self.game_menu.skipturn)
-			self.state = "setup"
 			pass
 	
 
@@ -689,7 +686,7 @@ Board.register_event_type('on_reqconnect')
 Board.register_event_type('on_disconnect')
 
 """
-Подобное будет в коде ланчера для добавления event_handler'а на событие хода
+Подобное будет в коде ланчера для добавления event_handler'а на событие хода:
 board = Board(...)
 def on_mademove_event_handler(x1,y1):
 	client.sendto(...)
@@ -700,10 +697,6 @@ board.dispatch_event('on_movereceive',board,y,x)
 Которое объектом класса Board ловится, обновляется матрица, рисуется поле. 'board'
 нужно передавать, чтобы можно было в этой функции использовать классовые методы.
 """
-def texture_set_mag_filter_nearest( texture ): #функция, преобразующая изображение в текстуру OpenGL со всякими фильтрами
-	glBindTexture( texture.target, texture.id  )
-	glTexParameteri( texture.target, GL_TEXTURE_MAG_FILTER, GL_NEAREST )
-	glBindTexture( texture.target, 0 )		
 
 if __name__ == "__main__":
 	window = Board(BOARD_W, BOARD_H, WINDOW_W, WINDOW_H, MSG, TILE_SIZE, SQUARE_SIZE, FONT)
