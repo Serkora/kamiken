@@ -8,7 +8,7 @@ from random import randint
 from configparser import ConfigParser
 
 config = ConfigParser()
-config.readfp(open("config021.ini"))
+config.readfp(open("config.ini"))
 
 serverip = config.get('network','serverip')
 serverport = int(config.get('network','serverport'))
