@@ -637,7 +637,7 @@ class Board(pyglet.window.Window):
 		присвоений и прочей фигни, решил вынести всё в отедльные функции, а тут
 		только вызывать то, что нужно, в зависимсоти от состояния игры.
 		"""
-		self.msg = str(x)+"  "+str(y)
+#		self.msg = str(x)+"  "+str(y)
 		if self.state == "playing":
 			self.mouse_motion_play(x,y)
 			self.game_menu.highlight(x,y)
