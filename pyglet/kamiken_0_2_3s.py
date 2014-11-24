@@ -679,7 +679,6 @@ class Board(pyglet.window.Window):
 			pass
 	
 
-
 Board.register_event_type('on_mademove')
 Board.register_event_type('on_movereceive')
 Board.register_event_type('on_reqconnect')
