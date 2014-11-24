@@ -246,11 +246,12 @@ class GameMenu(object):
 		elif button == "Save game":
 			pass
 		elif button == "Finish game":
-			pass
+			self.board.finish_game()
 		elif button == "Settings":
 			pass
 		elif button == "Disconnect":
-			pass
+			self.board.state = "setup"
+			self.board.dispatch_event('on_disconnect')
 		elif button == "Quit":
 			self.board._quit()
 
@@ -267,7 +268,7 @@ class Board(pyglet.window.Window):
 		self.SQUARE_SIZE = SQUARE_SIZE
 		self.BRD_H = BOARD_H
 		self.BRD_W = BOARD_W
-		self.scale = (self.TILE_SIZE/r_stone.width)
+		self.scale = self.TILE_SIZE/r_stone.width
 		self.state = "setup" # после коннекта на playing изменяется
 		self.gametype = "multiplayer"
 		self.pulseiter = 0
@@ -280,9 +281,9 @@ class Board(pyglet.window.Window):
 		self.margin_v = (self.height - self.SQUARE_SIZE * self.BRD_H) // 2
 		self.margin_h = (self.width - self.SQUARE_SIZE * self.BRD_W) // 4
 			# графические параметры
-		self.batch_launcher = pyglet.graphics.Batch()
+		self.batch_game = pyglet.graphics.Batch()
+		self.batch_startup = pyglet.graphics.Batch()
 		self.batch_menu = pyglet.graphics.Batch()
-		self.batch = pyglet.graphics.Batch()
 		self.batch_fade = pyglet.graphics.Batch()
 		self.FADE_X = 0
 		self.FADE_Y = 0
@@ -295,10 +296,11 @@ class Board(pyglet.window.Window):
 		self.label = pyglet.text.Label(
 			text=self.msg, font_size=TILE_SIZE - 10, anchor_x='center', font_name=FONT,
 			color=colors['b_stone'], x=self.width//2, y=self.height - 25,
-			batch = self.batch)
+			batch = self.batch_game)
 		self.startuplabels()
 
 	def _quit(self):
+		self.dispatch_event('on_disconnect')
 		write_config(self)
 		self.close()
 
@@ -349,14 +351,18 @@ class Board(pyglet.window.Window):
 				if self.ALL_STONES[j,i] < 5.0:
 					new_stone = pyglet.sprite.Sprite(tiles[self.ALL_STONES[j,i]],
 									 x_stone, y_stone,
+<<<<<<< HEAD
 									 batch=self.batch         )
+=======
+									 batch=self.batch_game)
+>>>>>>> 89e02323dbc3751faa2cf523490c09bc25c78ffd
 					new_stone.scale = self.scale
 					if (i,j) == self.pulse_stone:
-						new_stone.opacity = self.pulseopacity
+						new_stone.opacity = self.pulse_opacity
 					else:
 						new_stone.opacity = opacity[self.ALL_STONES[j,i]]
 					stones.append(new_stone)
-		self.batch.draw()
+		self.batch_game.draw()
 		self.batch_menu.draw()
 		if self.FADE_FLAG:
 			self.batch_fade.draw()
@@ -366,29 +372,26 @@ class Board(pyglet.window.Window):
 		yp1 = self.height//2.5
 		xp2 = self.width//2 + self.TILE_SIZE * 3
 		yp2 = self.height//2.5
-		pl1 = pyglet.sprite.Sprite(tiles[abs(self.player - 2)], xp1, yp1, batch=self.batch)
-		pl2 = pyglet.sprite.Sprite(tiles[self.player * 2 - 2], xp2, yp2, batch=self.batch)
+		pl1 = pyglet.sprite.Sprite(tiles[abs(self.player - 2)], xp1, yp1, batch=self.batch_startup)
+		pl2 = pyglet.sprite.Sprite(tiles[self.player * 2 - 2], xp2, yp2, batch=self.batch_startup)
 		pl1.scale = self.scale * 3; pl2.scale = self.scale * 3
 		if abs(self.player - 2) == 1: pl2.opacity = 50
 		else: pl1.opacity = 50
 
 		if self.gametype == "multiplayer": 
 			mp_sel = pyglet.sprite.Sprite(mp_select, self.mp_label.x, self.mp_label.y,
-											batch=self.batch)
+											batch=self.batch_startup)
 		else:
 			sp_sel = pyglet.sprite.Sprite(sp_select, self.sp_label.x, self.sp_label.y,
-											batch=self.batch)
-		self.batch.draw()
+											batch=self.batch_startup)
+		self.batch_startup.draw()
 		pass
 
 	def draw_finish(self):
 		self.draw_game()
-		score_r = len(where(self.ALL_STONES==3)[0])
-		score_b = len(where(self.ALL_STONES==4)[1])
-		self.msg = "Red: "+str(score_r)+"  Blue: "+str(score_b)
 
 	def pulsation(self,trash):
-		self.pulseopacity = 200+55*cos(self.pulseiter)
+		self.pulse_opacity = 200+55*cos(self.pulseiter)
 		self.pulseiter = (self.pulseiter+pi/10)%(2*pi)
 
 		###### Добавление или удаление элементов, перерасчёт координат ######
@@ -400,17 +403,17 @@ class Board(pyglet.window.Window):
 		self.brdlabel = pyglet.text.Label(
 			"Board size", font_size=15, anchor_x="center", font_name=FONT,
 			color=colors['textb'], x=self.width/2 - 40, y=self.height/1.35, 
-			batch = self.batch)
+			batch = self.batch_startup)
 		self.boardtxt = TextWidget(str(BOARD_H), self.width/2 + 60, self.height/1.35 - 7.5, 
-										50, self.batch)
+										50, self.batch_startup)
 		self.sp_label = pyglet.text.Label(
 			"Single Player", font_size=15, anchor_x="center", font_name=FONT,
 			color=colors['textb'], x=self.width/2-70, y=self.height/1.6, 
-			batch = self.batch)
+			batch = self.batch_startup)
 		self.mp_label = pyglet.text.Label(
 			"Multiplayer", font_size=15, anchor_x="center", font_name=FONT,
 			color=colors['textb'], x=self.width/2+70, y=self.height/1.6, 
-			batch = self.batch)
+			batch = self.batch_startup)
 		
 	def update_coordinates(self):
 		"""
@@ -473,26 +476,28 @@ class Board(pyglet.window.Window):
 		без эксплицитного объявления этого изменения.
 		"""
 		boardsize = int(self.boardtxt.document.text)
-		self.boardtxt.layout.delete()
-		self.brdlabel.delete()
-		self.sp_label.delete()
-		self.mp_label.delete()
-		del self.boardtxt
-		del self.brdlabel
-# 		del self.sp_label
-# 		del self.mp_label
 		self.BRD_H = boardsize
 		self.BRD_W = boardsize
-		menu_def_x = lambda: self.margin_h + (self.BRD_H+0.5) * self.SQUARE_SIZE
-		menu_def_y = lambda: self.height - self.margin_v
-		self.game_menu = GameMenu(menu_def_x, menu_def_y, height=lambda: self.height,
-									board=self, batch=self.batch_menu,
-									orientation = "vertical")
+		if not hasattr(self, "game_menu"):
+			menu_def_x = lambda: self.margin_h + (self.BRD_H+0.5) * self.SQUARE_SIZE
+			menu_def_y = lambda: self.height - self.margin_v
+			self.game_menu = GameMenu(menu_def_x, menu_def_y, height=lambda: self.height,
+										board=self, batch=self.batch_menu,
+										orientation = "vertical")
 		self.update_coordinates()
 		self.ALL_STONES = zeros([self.BRD_W, self.BRD_H])
 		self.dispatch_event('on_reqconnect')
 		self.state = "playing"
 		pyglet.clock.schedule_interval(self.pulsation,1/30)
+	
+	def finish_game(self):
+		self.pulse_opacity = 255
+		self.pulse_stone = ()
+		pyglet.clock.unschedule(self.pulsation)
+		score_r = len(where(self.ALL_STONES==3)[0])
+		score_b = len(where(self.ALL_STONES==4)[1])
+		self.msg = "Red: "+str(score_r)+"  Blue: "+str(score_b)
+		self.state = "finish"
 	
 	def make_move(self,x1,y1,pl):
 		"""
@@ -591,9 +596,8 @@ class Board(pyglet.window.Window):
 		"""
 		При ходе создаётся событие, которе при наличии сетевого клиента перехватывается
 		и высылает ход на сервер. Повторяется 5 раз с интервалом в 100мс.
-		Если клиента нет, то ничего не происходит.
+		Если клиента нет, камень ставится на поле и больше ничего не происходит.
 		"""
-		self.game_menu.button_press(x,y)
 		x1 = (x - self.margin_h)//self.SQUARE_SIZE
 		y1 = (y - self.margin_v)//self.SQUARE_SIZE
 		if 0 <= y1 < self.BRD_H and 0 <= x1 < self.BRD_W:
@@ -605,7 +609,6 @@ class Board(pyglet.window.Window):
 					)
 
 		###### Обработчики событий ######
-
 	def on_movereceive(event,self,player,x,y):
 		"""
 		'self' стоит не первым из - за того, что событие вызывается извне и сам класс
@@ -624,6 +627,9 @@ class Board(pyglet.window.Window):
 		"""
 		if button == mouse.LEFT and self.state == "playing":
 			self.mouse_press_play(x,y) 
+			self.game_menu.button_press(x,y)
+		elif button ==mouse.LEFT and self.state == "finish":
+			self.game_menu.button_press(x,y)
 		elif button == mouse.LEFT and self.state == "setup":
 			self.mouse_press_setup(x,y)
 
@@ -636,6 +642,8 @@ class Board(pyglet.window.Window):
 		self.msg = str(x)+"  "+str(y)
 		if self.state == "playing":
 			self.mouse_motion_play(x,y)
+			self.game_menu.highlight(x,y)
+		elif self.state == "finish":
 			self.game_menu.highlight(x,y)
 		elif self.state == "setup":
 			self.mouse_motion_setup(x,y)	
@@ -671,9 +679,10 @@ class Board(pyglet.window.Window):
 			self.player = self.player * 2%3
 		if symbol == key.T and key.MOD_SHIFT:	# Для тестов. 
 #			self.height = self.height * 1.5
-			self.game_menu.skipturn.delete()
+#			self.game_menu.skipturn.delete()
 #			self.game_menu.skipturn.batch = None
-			self.game_menu.buttons.remove(self.game_menu.skipturn)
+#			self.game_menu.buttons.remove(self.game_menu.skipturn)
+			self.state = "setup"
 			pass
 	
 
@@ -681,6 +690,7 @@ class Board(pyglet.window.Window):
 Board.register_event_type('on_mademove')
 Board.register_event_type('on_movereceive')
 Board.register_event_type('on_reqconnect')
+Board.register_event_type('on_disconnect')
 
 """
 Подобное будет в коде ланчера для добавления event_handler'а на событие хода
