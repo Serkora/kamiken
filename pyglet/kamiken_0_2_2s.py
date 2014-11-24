@@ -341,7 +341,7 @@ class Board(pyglet.window.Window):
 						       self.FADE_X, self.FADE_Y,
 						       batch = self.batch_fade)
 		self.fade_stone.opacity = FADE_STONE_OPACITY
-		self.fade_stone.scale = self.scale*0.5
+		self.fade_stone.scale = self.scale
 		for i in range(self.BRD_H):
 			for j in range(self.BRD_W):
 				x_stone = (i + 0.5) * self.SQUARE_SIZE + self.margin_h
@@ -350,7 +350,7 @@ class Board(pyglet.window.Window):
 					new_stone = pyglet.sprite.Sprite(tiles[self.ALL_STONES[j,i]],
 									 x_stone, y_stone,
 									 batch=self.batch         )
-					new_stone.scale = self.scale*0.5
+					new_stone.scale = self.scale
 					if (i,j) == self.pulse_stone:
 						new_stone.opacity = self.pulseopacity
 					else:
@@ -420,7 +420,7 @@ class Board(pyglet.window.Window):
 		"""
 		self.SQUARE_SIZE = (self.height - 60)//self.BRD_H
 		self.TILE_SIZE = 0.8 * self.SQUARE_SIZE
-		self.scale = self.TILE_SIZE/150
+		self.scale = self.TILE_SIZE/r_stone.width
 		self.margin_v = (self.height - self.SQUARE_SIZE*self.BRD_H) // 2
 		self.margin_h = (self.width - self.SQUARE_SIZE*self.BRD_W) // 4
 		self.labels_redraw()
