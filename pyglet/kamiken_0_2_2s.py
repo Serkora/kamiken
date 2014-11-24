@@ -351,11 +351,7 @@ class Board(pyglet.window.Window):
 				if self.ALL_STONES[j,i] < 5.0:
 					new_stone = pyglet.sprite.Sprite(tiles[self.ALL_STONES[j,i]],
 									 x_stone, y_stone,
-<<<<<<< HEAD
-									 batch=self.batch         )
-=======
 									 batch=self.batch_game)
->>>>>>> 89e02323dbc3751faa2cf523490c09bc25c78ffd
 					new_stone.scale = self.scale
 					if (i,j) == self.pulse_stone:
 						new_stone.opacity = self.pulse_opacity
