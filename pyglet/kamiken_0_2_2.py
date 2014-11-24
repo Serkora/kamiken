@@ -612,9 +612,9 @@ class Board(pyglet.window.Window):
 		'self' стоит не первым из - за того, что событие вызывается извне и сам класс
 		доски вообще в явном виде передаётся при создании события.
 		"""
-		if player!=0 and x>0 and y>0:
+		if player!=0 and x >= 0 and y >= 0:
 			self.make_move(x,y,player)
-		elif x == 0 and y == 0:
+		elif x == -1 and y == -1:
 			self.turn = self.turn*2%3
 		elif player==0:
 			self.label_update()
