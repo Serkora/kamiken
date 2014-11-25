@@ -252,6 +252,15 @@ class GameMenu(object):
 		elif button == "Finish game":
 			self.board.finish_game()
 		elif button == "Settings":
+			if self.board.type == "most":
+				self.board.msg = "ТОРМОЗАА"
+				self.board.type = "least"
+			elif self.board.type == "least":
+				self.board.msg = "Пока ничего не делашеь — норм."
+				self.board.type = "medium"
+			elif self.board.type == "medium":
+				self.board.msg = "Летает!"
+				self.board.type = "most"
 			pass
 		elif button == "Disconnect":
 			self.board.state = "setup"
@@ -307,6 +316,8 @@ class Board(pyglet.window.Window):
 			# Для тестов #
 		self.i = 0
 		self.time1 = time.clock()
+		self.type = "least"
+		self.msg = "ТОРМОЗААА"
 
 	def _quit(self):
 		self.dispatch_event('on_disconnect')
@@ -333,7 +344,7 @@ class Board(pyglet.window.Window):
 		for i in range(IMG_IN_WINDOW_W * 4 - 1):
 			for j in range(IMG_IN_WINDOW_H * 4 - 1):
 				image.blit(x=i * image.width, y=j * image.width)
-#		self.fps_display.draw()
+		self.fps_display.draw()
 		
 		if self.state=="playing": self.draw_game()
 		elif self.state=="setup": self.draw_setup()	
@@ -368,7 +379,15 @@ class Board(pyglet.window.Window):
 		# синхронизирована никак.
 		self.batch_menu.draw()
 		
-		if np.all(self.lastmatrix == self.ALL_STONES):
+		if np.all(self.lastmatrix == self.ALL_STONES) and self.type == "medium":
+			self.batch_game.draw()
+		elif self.type == "most":
+			x = self.pulse_stone[0]
+			y = self.pulse_stone[1]
+			self.stones[randint(0,len(self.stones)-1)].image = tiles[randint(0,4)]
+			self.stones[randint(0,len(self.stones)-1)].image = tiles[randint(0,4)]
+			self.stones[randint(0,len(self.stones)-1)].image = tiles[randint(0,4)]
+			self.stones[randint(0,len(self.stones)-1)].image = tiles[randint(0,4)]
 			self.batch_game.draw()
 		else:
 			self.stones = []
@@ -524,6 +543,7 @@ class Board(pyglet.window.Window):
 		self.state = "playing"
 		self.lastmatrix = 1
 		#pyglet.clock.schedule_interval(self.pulsation,1/30)
+		self.msg = "ТОРМОЗААА"
 	
 	def finish_game(self):
 		self.pulse_opacity = 255
@@ -556,7 +576,7 @@ class Board(pyglet.window.Window):
 		self.turn = self.turn * 2%3  # 1 - >2, 2 - >1
 		self.FADE_FLAG = False
 		self.pulse_stone = (x1,y1)
-		self.label_update()
+#		self.label_update()
 
 	def mouse_motion_setup(self,x,y):
 		"""
@@ -625,7 +645,7 @@ class Board(pyglet.window.Window):
 		if xp1 <= x <= xp1 + self.TILE_SIZE * 3 and yp1 <= y <= yp1 + self.TILE_SIZE * 3 \
 			or xp2 <= x <= xp2 + self.TILE_SIZE * 3 and yp2 <= y <= yp2 + self.TILE_SIZE * 3:
 				self.start_game()
-				self.msg = "Waiting for second player..."
+				#self.msg = "Waiting for second player..."
 	
 	def mouse_press_play(self,x,y):
 		"""
@@ -714,6 +734,9 @@ class Board(pyglet.window.Window):
 			self.player = self.player * 2%3
 		if symbol == key.T and key.MOD_SHIFT:	# Для тестов. 
 			#pyglet.clock.schedule_interval(lambda x: self.dispatch_event('on_key_press',key.G,False), 1/37)
+#			self.stones[randint(0,self.BRD_H**2)].image = tiles[randint(0,4)]
+#			print("Pomenyal prozrachnost' sluchaynogo sprite'a")
+			print(self.type)
 			pass
 
 Board.register_event_type('on_mademove')
