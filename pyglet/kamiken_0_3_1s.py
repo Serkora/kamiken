@@ -304,6 +304,9 @@ class Board(pyglet.window.Window):
 			batch = self.batch_game)
 		self.startuplabels()
 
+			# Для тестов #
+		self.i = 0
+
 	def _quit(self):
 		self.dispatch_event('on_disconnect')
 		write_config(self)
@@ -707,7 +710,6 @@ class Board(pyglet.window.Window):
 		if symbol == key.T and key.MOD_SHIFT:	# Для тестов. 
 			#pyglet.clock.schedule_interval(lambda x: self.dispatch_event('on_key_press',key.G,False), 1/37)
 			pass
-
 
 Board.register_event_type('on_mademove')
 Board.register_event_type('on_movereceive')
