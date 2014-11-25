@@ -306,6 +306,7 @@ class Board(pyglet.window.Window):
 
 			# Для тестов #
 		self.i = 0
+		self.time1 = time.clock()
 
 	def _quit(self):
 		self.dispatch_event('on_disconnect')
@@ -337,6 +338,10 @@ class Board(pyglet.window.Window):
 		if self.state=="playing": self.draw_game()
 		elif self.state=="setup": self.draw_setup()	
 		elif self.state=="finish": self.draw_finish()
+# 		if self.i == 0:
+# 			print(time.clock() - self.time1)
+# 			self.time1 = time.clock()
+# 		self.i = (self.i+1)%30
 	
 	def draw_game(self):
 		"""
