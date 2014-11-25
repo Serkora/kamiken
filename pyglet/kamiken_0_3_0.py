@@ -1,7 +1,7 @@
-#!/Library/Frameworks/Python.framework/Versions/3.4/bin/python3.4
+#!/usr/bin/env python3
 #  - * -  coding: UTF - 8  - * - 
 '''
-Kamiken v0.2.2
+Kamiken v0.3.0
 '''
 
 import pyglet
@@ -14,6 +14,8 @@ import numpy as np
 from math import copysign
 from random import randint
 from configparser import ConfigParser
+from threading import Thread
+import time
 
 config = ConfigParser()
 config.readfp(open("config.ini"))
@@ -273,12 +275,12 @@ class Board(pyglet.window.Window):
 		self.scale = self.TILE_SIZE/r_stone.width
 		self.state = "setup" # после коннекта на playing изменяется
 		self.gametype = "multiplayer"
-		self.pulseiter = 0
+		self.pulse_pos = False
 			# окно и отступы
 		self.WIN_W = WINDOW_W
 		self.WIN_H = WINDOW_H
 		super(Board, self).__init__(width=self.WIN_W, height=self.WIN_H, 
-									caption=('Kamiken'), vsync=True)
+									caption=('Kamiken'), vsync=False)
 		self.set_fullscreen(FULLSCREEN)
 		self.margin_v = (self.height - self.SQUARE_SIZE * self.BRD_H) // 2
 		self.margin_h = (self.width - self.SQUARE_SIZE * self.BRD_W) // 4
@@ -287,10 +289,11 @@ class Board(pyglet.window.Window):
 		self.batch_startup = pyglet.graphics.Batch()
 		self.batch_menu = pyglet.graphics.Batch()
 		self.batch_fade = pyglet.graphics.Batch()
+		self.stones = []
 		self.FADE_X = 0
 		self.FADE_Y = 0
 		self.FADE_FLAG = False
-		self.pulseopacity = 1
+		self.pulse_opacity = 255
 		self.pulse_stone = (-1,-1)
 		self.fps_display = pyglet.clock.ClockDisplay()
 			# лейблы / текст
@@ -339,31 +342,48 @@ class Board(pyglet.window.Window):
 		рисуется с дополнительным отступом: разницей между размером спрайта и необходимым
 		размером одной клетки.
 		(i+0.5) и (j+0.5) нужны потому что anchor спрайтов в центре, а не нижнем углу.
+		If/else для производительности. Если матрица не изменилась — мы просто рисуем 
+		то, что уже и так было в batch'е. self.lastmatrix копирует ALL_STONES после
+		каждого случая, когда матрица менялась и отрисовалось новое поле.
 		"""
-		stones = []
-		self.fade_stone = pyglet.sprite.Sprite(tiles[self.turn],
-						       self.FADE_X, self.FADE_Y,
-						       batch = self.batch_fade)
+		# fade_stone проще переназначать всегда, потому что у него постоянно
+		# меняются координаты, а нагрузки от одного камня почти никакой,
+		# проверка смены координат будет, вероятно, более ресурсозатратной.
+		self.fade_stone = pyglet.sprite.Sprite(
+			tiles[self.turn], self.FADE_X, self.FADE_Y, batch = self.batch_fade
+		)
 		self.fade_stone.opacity = FADE_STONE_OPACITY
 		self.fade_stone.scale = self.scale
-		for i in range(self.BRD_H):
-			for j in range(self.BRD_W):
-				x_stone = (i + 0.5) * self.SQUARE_SIZE + self.margin_h
-				y_stone = (j + 0.5) * self.SQUARE_SIZE + self.margin_v
-				if self.ALL_STONES[j,i] < 5.0:
-					new_stone = pyglet.sprite.Sprite(tiles[self.ALL_STONES[j,i]],
-									 x_stone, y_stone,
-									 batch=self.batch_game)
-					new_stone.scale = self.scale
-					if (i,j) == self.pulse_stone:
-						new_stone.opacity = self.pulse_opacity
-					else:
-						new_stone.opacity = opacity[self.ALL_STONES[j,i]]
-					stones.append(new_stone)
-		self.batch_game.draw()
-		self.batch_menu.draw()
 		if self.FADE_FLAG:
-			self.batch_fade.draw()
+			self.batch_fade.draw() 
+		# Меню тоже постояно рисуется, потому что его смена вообще с игрой не
+		# синхронизирована никак.
+		self.batch_menu.draw()
+		
+		if np.all(self.lastmatrix == self.ALL_STONES):
+			self.batch_game.draw()
+		else:
+			self.stones = []
+			for i in range(self.BRD_H):
+				for j in range(self.BRD_W):
+					stone = self.ALL_STONES[j,i]
+					x_stone = (i + 0.5) * self.SQUARE_SIZE + self.margin_h
+					y_stone = (j + 0.5) * self.SQUARE_SIZE + self.margin_v
+					if stone < 5:
+						new_stone = pyglet.sprite.Sprite(
+							tiles[stone], x_stone, y_stone, batch=self.batch_game
+						)
+						new_stone.scale = self.scale
+						if (i,j) == self.pulse_stone:	# ПУЛЬСАЦИЯ ОТКЛЮЧЕНА
+							new_stone.opacity = self.pulse_opacity
+						else:
+							try:
+								new_stone.opacity = opacity[stone]
+							except:
+								self.msg = "You have won the lottery!"
+						self.stones.append(new_stone)
+			self.batch_game.draw()
+			self.lastmatrix = self.ALL_STONES.copy()
 
 	def draw_setup(self):
 		xp1 = self.width//2 - self.TILE_SIZE * 3
@@ -389,8 +409,15 @@ class Board(pyglet.window.Window):
 		self.draw_game()
 
 	def pulsation(self,trash):
-		self.pulse_opacity = 200+55*cos(self.pulseiter)
-		self.pulseiter = (self.pulseiter+pi/10)%(2*pi)
+		"""
+		Переделано для увеличения производительности.
+		"""
+		if self.pulse_pos:
+			self.pulse_opacity = self.pulse_opacity + 10
+			if self.pulse_opacity >= 255: self.pulse_pos = False
+		else:
+			self.pulse_opacity = self.pulse_opacity - 10
+			if self.pulse_opacity <= 165: self.pulse_pos = True
 
 		###### Добавление или удаление элементов, перерасчёт координат ######
 	
@@ -428,6 +455,7 @@ class Board(pyglet.window.Window):
 		if hasattr(self, 'game_menu'):
 			self.game_menu.place_buttons()
 		self.FADE_FLAG = False # скорее всего, курсор будет уже на другом местеЙ
+		self.lastmatrix = 1 # топорный способ перерисовывать поле при изменении окна
 
 	def label_update(self):
 		if self.turn==self.player:
@@ -467,7 +495,7 @@ class Board(pyglet.window.Window):
 		а дальше всё как и раньше.
 		Снова вызывается функция обновления размера окна, отступов, координат лейблов.
 		В стек добавляется функция, изименяющая прозрачность последнего хода каждые 1/30с.
-		В принципе, туда можно добавить и другую анимацию.
+		В принципе, туда можно добавить и другую анимацию. ОТКЛЮЧЕНО
 		menu_def_x/y вынесены для удобности редактирования/восприятия.
 		Используется lambda для того, чтобы menu.x (отправная точна координат отедльных
 		кнопок) было функцией, меняющей значение в зависимости от размеров окна 
@@ -486,7 +514,8 @@ class Board(pyglet.window.Window):
 		self.ALL_STONES = zeros([self.BRD_W, self.BRD_H])
 		self.dispatch_event('on_reqconnect')
 		self.state = "playing"
-		pyglet.clock.schedule_interval(self.pulsation,1/30)
+		self.lastmatrix = 1
+		#pyglet.clock.schedule_interval(self.pulsation,1/30)
 	
 	def finish_game(self):
 		self.pulse_opacity = 255
@@ -612,9 +641,9 @@ class Board(pyglet.window.Window):
 		'self' стоит не первым из - за того, что событие вызывается извне и сам класс
 		доски вообще в явном виде передаётся при создании события.
 		"""
-		if player!=0 and x>0 and y>0:
+		if player!=0 and x >= 0 and y >= 0:
 			self.make_move(x,y,player)
-		elif x == 0 and y == 0:
+		elif x == -1 and y == -10:
 			self.turn = self.turn*2%3
 		elif player==0:
 			self.label_update()
@@ -637,7 +666,7 @@ class Board(pyglet.window.Window):
 		присвоений и прочей фигни, решил вынести всё в отедльные функции, а тут
 		только вызывать то, что нужно, в зависимсоти от состояния игры.
 		"""
-		self.msg = str(x)+"  "+str(y)
+#		self.msg = str(x)+"  "+str(y)
 		if self.state == "playing":
 			self.mouse_motion_play(x,y)
 			self.game_menu.highlight(x,y)
@@ -676,8 +705,14 @@ class Board(pyglet.window.Window):
 		if symbol == key.Q and key.MOD_SHIFT: 	# Для аутизм-режима
 			self.player = self.player * 2%3
 		if symbol == key.T and key.MOD_SHIFT:	# Для тестов. 
+			#pyglet.clock.schedule_interval(lambda x: self.dispatch_event('on_key_press',key.G,False), 1/37)
 			pass
 	
+	def test(self):
+		while True:
+			for key in keystate:
+				if keystate[key]:
+					self.dispatch_event('on_key_press',key,False)
 
 Board.register_event_type('on_mademove')
 Board.register_event_type('on_movereceive')
@@ -699,5 +734,7 @@ board.dispatch_event('on_movereceive',board,y,x)
 
 if __name__ == "__main__":
 	window = Board(BOARD_W, BOARD_H, WINDOW_W, WINDOW_H, MSG, TILE_SIZE, SQUARE_SIZE, FONT)
-	pyglet.clock.schedule(lambda x: None)
+	pyglet.clock.schedule_interval(lambda _: None, 1/150)
+	keystate = key.KeyStateHandler()
+	window.push_handlers(keystate)
 	pyglet.app.run()
