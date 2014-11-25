@@ -385,15 +385,15 @@ class Board(pyglet.window.Window):
 			x = self.pulse_stone[0]
 			y = self.pulse_stone[1]
 			self.stones[x][y].image = tiles[randint(0,4)]
-# 			self.stones[y+1][x].image = tiles[randint(0,4)]
-# 			self.stones[y-1][x].image = tiles[randint(0,4)]
-# 			self.stones[y][x+1].image = tiles[randint(0,4)]
-# 			self.stones[y][x-1].image = tiles[randint(0,4)]
+			self.stones[x][y+1].image = tiles[randint(0,4)]
+			self.stones[x][y-1].image = tiles[randint(0,4)]
+			self.stones[x+1][y].image = tiles[randint(0,4)]
+			self.stones[x-1][y].image = tiles[randint(0,4)]
 			self.batch_game.draw()
 		else:
 			self.stones = []
-			self.stonesj = []
 			for i in range(self.BRD_H):
+				self.stonesj = []
 				for j in range(self.BRD_W):
 					stone = self.ALL_STONES[j,i]
 					x_stone = (i + 0.5) * self.SQUARE_SIZE + self.margin_h
@@ -410,11 +410,10 @@ class Board(pyglet.window.Window):
 								new_stone.opacity = opacity[stone]
 							except:
 								self.msg = "You have won the lottery!"
-					self.stonesj.append(new_stone)
+						self.stonesj.append(new_stone)
 				self.stones.append(self.stonesj)
 			self.batch_game.draw()
 			self.lastmatrix = self.ALL_STONES.copy()
-			print(self.stones)
 
 	def draw_setup(self):
 		xp1 = self.width//2 - self.TILE_SIZE * 3
@@ -742,6 +741,7 @@ class Board(pyglet.window.Window):
 #			print("Pomenyal prozrachnost' sluchaynogo sprite'a")
 #			self.stones = np.transpose(self.stones)
 			self.stones = np.flipud(np.rot90(self.stones))
+			print(self.pulse_stone)
 			pass
 
 Board.register_event_type('on_mademove')
