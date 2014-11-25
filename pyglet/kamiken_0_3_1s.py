@@ -316,7 +316,7 @@ class Board(pyglet.window.Window):
 			# Для тестов #
 		self.i = 0
 		self.time1 = time.clock()
-		self.type = "least"
+		self.type = "medium"
 		self.msg = "ТОРМОЗААА"
 
 	def _quit(self):
@@ -384,13 +384,15 @@ class Board(pyglet.window.Window):
 		elif self.type == "most":
 			x = self.pulse_stone[0]
 			y = self.pulse_stone[1]
-			self.stones[randint(0,len(self.stones)-1)].image = tiles[randint(0,4)]
-			self.stones[randint(0,len(self.stones)-1)].image = tiles[randint(0,4)]
-			self.stones[randint(0,len(self.stones)-1)].image = tiles[randint(0,4)]
-			self.stones[randint(0,len(self.stones)-1)].image = tiles[randint(0,4)]
+			self.stones[x][y].image = tiles[randint(0,4)]
+# 			self.stones[y+1][x].image = tiles[randint(0,4)]
+# 			self.stones[y-1][x].image = tiles[randint(0,4)]
+# 			self.stones[y][x+1].image = tiles[randint(0,4)]
+# 			self.stones[y][x-1].image = tiles[randint(0,4)]
 			self.batch_game.draw()
 		else:
 			self.stones = []
+			self.stonesj = []
 			for i in range(self.BRD_H):
 				for j in range(self.BRD_W):
 					stone = self.ALL_STONES[j,i]
@@ -408,9 +410,11 @@ class Board(pyglet.window.Window):
 								new_stone.opacity = opacity[stone]
 							except:
 								self.msg = "You have won the lottery!"
-						self.stones.append(new_stone)
+					self.stonesj.append(new_stone)
+				self.stones.append(self.stonesj)
 			self.batch_game.draw()
 			self.lastmatrix = self.ALL_STONES.copy()
+			print(self.stones)
 
 	def draw_setup(self):
 		xp1 = self.width//2 - self.TILE_SIZE * 3
@@ -736,7 +740,8 @@ class Board(pyglet.window.Window):
 			#pyglet.clock.schedule_interval(lambda x: self.dispatch_event('on_key_press',key.G,False), 1/37)
 #			self.stones[randint(0,self.BRD_H**2)].image = tiles[randint(0,4)]
 #			print("Pomenyal prozrachnost' sluchaynogo sprite'a")
-			print(self.type)
+#			self.stones = np.transpose(self.stones)
+			self.stones = np.flipud(np.rot90(self.stones))
 			pass
 
 Board.register_event_type('on_mademove')
