@@ -11,7 +11,7 @@ from kamiken_0_3_0 import Board, BOARD_W, BOARD_H, WINDOW_W, WINDOW_H, MSG, TILE
 
 from CLIENT_0_0_5 import Client
 from SERVER_0_0_5 import GameServer
-from pyglet.app import run
+from pyglet import app, clock
 
 if __name__ == "__main__":
 	window = Board(BOARD_W, BOARD_H, WINDOW_W, WINDOW_H, MSG, TILE_SIZE, SQUARE_SIZE, FONT)
@@ -25,4 +25,5 @@ if __name__ == "__main__":
 	window.on_reqconnect = on_reqconnect
 	window.on_disconnect = on_disconnect
 	window.on_mademove = on_mademove
-	run()	
+	clock.schedule_interval(lambda _: None, 1/60) # 60 Hz refresh rate
+	app.run()	
