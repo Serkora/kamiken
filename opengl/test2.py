@@ -406,20 +406,62 @@ class Ring(object):
 		self.vertex_list.delete()
 
 
-class Sphere(object):
+class Square(object):
+	"""
+	Для тестов моего способа построения сферы. Потом можно соединить несколько таких
+	для получения куба, навреное.
+	"""
 	list = None
-	def __init__(self, radius, slices,
+	def __init__(self, side, triangles,
 				 batch, group=None):
 		# Create the vertex and normal arrays.
+#		r = radius
+		vertices = []
+		indices = []
+		step = side/float(triangles)
+		slices = triangles
+		
+		for i in range(0,triangles):
+			for j in range(0,triangles):
+				vertices.extend([(side/2)-i*step, (side/2)-j*step])
+		
+		vr = np.array(vertices)
+		vr = np.round(vr,4)
+		print(vr)
+	
+		for i in range(0,triangles+1):
+			for j in range(0,(triangles+1)):
+				indices.extend([i*slices, (i+1)*slices, i*slices+1])
+				indices.extend([i*slices+1, (i+1)*slices, (i+1)*slices+1])
+
+		print len(indices)
+		print len(vertices)
+
+		
+#		 indices = []
+#		 for i in range(slices - 1):
+#			 for j in range(inner_slices - 1):
+#				 p = i * inner_slices + j
+#				 indices.extend([p, p + inner_slices, p + inner_slices + 1])
+#				 indices.extend([p, p + inner_slices + 1, p + 1])
+
+		self.vertex_list = batch.add_indexed(len(vertices)//2, GL_TRIANGLES, group, indices,
+   											 ('v2f/static', vertices))
+
+	def delete(self):
+		self.vertex_list.delete()
+
+
+class Sphere(object):
+	list = None
+	def __init__(self, radius, slices, batch, group=None):
 		r = radius
 		vertices = []
 		indices = []
 		step = (2 * pi) / (slices)
-			
-		
 		vertices.extend([r*sin(0),r*cos(0),sin(step)])		
  		vertices.extend([r*sin(0),r*cos(0),0])
-
+ 		
 		for i in range(0,slices):
 	 		vertices.extend([r*sin(step*i),r*cos(step*i),0])
 			vertices.extend([r*sin(step*i), r*cos(step*i), sin(step)])
@@ -480,14 +522,15 @@ def update(dt):
 	pass
 pyglet.clock.schedule(update)
 
-CAMDIST = -5
+CAMDIST = -10
 
 setup()
 batch = pyglet.graphics.Batch()
 # torus = Torus(1, 0.3, 30, 30
 # 			 , batch=batch) #можешь поиграться с количсетвом кусочков чтобы увидеть треугольнички 
 #circle = Circle(5, 50, batch=batch)
-ring = Ring(2,50, batch=batch)
+#ring = Ring(2,50, batch=batch)
+square = Square(4,4,batch=batch)
 #sphere = Sphere(2,20, batch=batch)
 rx = ry = rz = 0
 # ry = 200
