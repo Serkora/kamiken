@@ -58,7 +58,7 @@ def on_draw():
     #буферы, в первом хранится информация о цвете, а во втором непонятно о чем,
     #но он очевидно связан с "глубиной".
     glLoadIdentity()
-    glTranslatef(0, 0, -1)#эта функция двигает "камеру". Сейчас она двигается 
+    glTranslatef(0, 0, -20)#эта функция двигает "камеру". Сейчас она двигается 
     #"вверх", в сторону зрителя. Можно двигать относительно модели, можно 
     #относительно "перспективы" (туманная фраза, но суть в том, что движение
     #происходит в зависимости от текущей матрицы)
@@ -110,9 +110,9 @@ def setup():
     glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, vec(1, 1, 1, 1))
     glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50)
 
-class Cube(object):
+class Sphere(object):
    
-    def __init__(self, size, batch):
+    def __init__(self, size, R, batch):
         # Create the vertex and normal arrays.
  
         global vertices 
@@ -124,8 +124,6 @@ class Cube(object):
                 for z in range(size):
                     vertices.extend([x,y,z])
   
-        print(vertices)
-        print(len(vertices)//3)
         '''
         Почему то я решил, что если забить определенный выше массив
         координат в функцию тора, получиться куб. ХУЙ ТАМ. Я долго не мог 
@@ -157,14 +155,40 @@ class Cube(object):
         #                             ('v3f/static', (vertices)))                            
         #self.vertex_list = batch.add(len(vertices)//3, GL_TRIANGLE_FAN, None, 
         #                             ('v3f/static', (vertices)))      
-        
-                                    
+      
+        vert =   { 'x' : 0,
+                   'y' : 0,
+                   'z' : 0  }
+        vert_x = []
+        vert_y = []
+        vert_z = []
+        vertex = []
+        n = 0
+        for b in range(0,size,180-size):
+            for a in range(0,size,360-size):
+                vert_x.append(R*(sin((a*pi)/180))*(sin((b*pi)/180)))
+                vert_z.append(R*(cos((b*pi)/180))*(sin((a*pi)/180)))
+                vert_y.append(R*(cos((a*pi)/180)))
+                #vertex[n](vert)
+              
+                vert_x.append(R*(sin((a*pi)/180))*(sin(((b+size)*pi)/180)))
+                vert_z.append(R*(cos(((b+size)*pi)/180))*(sin((a*pi)/180)))
+                vert_y.append(R*(cos((a*pi)/180)))
+                n+=1
+              
+      #  for i in range(n):
+      #      vertex.extend(vert_x[i])
+       #     vertex.extend(vert_y[i])
+       #     vertex.extend(vert_z[i])
+        print(vert_x)
+        self.vertex_list = batch.add(n, GL_TRIANGLE_STRIP, None, 
+                                      ('v3f/static', (vert_x, vert_y, vert_z)))
     def delete(self):
         self.vertex_list.delete()
 
 setup()
 batch = pyglet.graphics.Batch()
-torus = Cube(8, batch=batch) 
+sphere = Sphere(100,100, batch=batch) 
 rx = ry = rz = 0
 
 pyglet.app.run()
