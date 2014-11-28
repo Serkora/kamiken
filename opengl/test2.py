@@ -7,6 +7,7 @@ from math import pi, sin, cos
 
 import pyglet
 from pyglet.gl import *
+from pyglet.window import *
 
 from random import random
 
@@ -35,7 +36,7 @@ def on_resize(width, height):
 	Как было там в комментах написано, эта функция как "сбрасывает" матрицу,
 	загружая единичную (которая identity matrix по-английски).
 	"""
-	gluPerspective(90., width / float(height), .1, 1000.)#это устанавливает как
+	gluPerspective(60., width / float(height), .1, 100.)#это устанавливает как
 	#бы угол зрения что-ли
 	"""
 	Первое да, угол, вот только почему-то его изменение ведёт к изменению размера
@@ -59,6 +60,24 @@ def on_resize(width, height):
 	
 
 @window.event
+def on_key_press(symbol,modifier):
+	global rx, ry, rz
+	if symbol == key.Q:
+		rx = (rx + 20)%360
+	if symbol == key.A:
+		rx = (rx - 20)%360
+	if symbol == key.W:
+		ry = (ry + 20)%360
+	if symbol == key.S:
+		ry = (ry - 20)%360
+	if symbol == key.E:
+		rz = (rz + 20)%360
+	if symbol == key.D:
+		rz = (rz - 20)%360
+
+
+
+@window.event
 def on_draw():
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) #это очищает так называемые 
 	#буферы, в первом хранится информация о цвете, а во втором непонятно о чем,
@@ -72,7 +91,7 @@ def on_draw():
 	остаётся тот, что был. Если же он ближе — то рисуется "поверх" имевшегося там объекта.
 	"""
 	glLoadIdentity()
-	glTranslatef(0, 0, -4)#эта функция двигает "камеру". Сейчас она двигается 
+	glTranslatef(0, 0, -10)#эта функция двигает "камеру". Сейчас она двигается 
 	#"вверх", в сторону зрителя. Можно двигать относительно модели, можно 
 	#относительно "перспективы" (туманная фраза, но суть в том, что движение
 	#происходит в зависимости от текущей матрицы)
@@ -84,17 +103,18 @@ def on_draw():
 
 def setup():
 	# One-time GL setup
-	glClearColor(1, 1, 1, 1)#чем очищать буферы
-	glColor3f(1, 0, 0)#ПРОСТО установка цвета. Чему - вообще непонятно. Но это - красный.
+	glClearColor(0.2, 0.2, 0.2, 1)#чем очищать буферы
+	glColor3f(1, 1, 1)#ПРОСТО установка цвета. Чему - вообще непонятно. Но это - красный.
 	glEnable(GL_DEPTH_TEST)#короче, если это выключить, объекты расположенные "ниже"
 	#не будут перекрываться верхнимиОМСКОМСКОМСК
 	""" Ну это вот как раз включает ту самую проверку глубины объекта/пикселя,
 	чтобы наложение объектов друг на друга не зависело от порядка их отрисовки."""
-	glEnable(GL_CULL_FACE)#не видимые поверхности вообще не рисуются. Произво-
+# 	glEnable(GL_CULL_FACE)#не видимые поверхности вообще не рисуются. Произво-
 	#дительность и т.д. Есть подводные камни.
-	""" 
-	Что за невидимые объекты? И как они могут нарисоваться? 
-	Или имеется в виду не рисовать то, что вне поля зрения?
+	"""
+	Отключил — мой треугольничек стал нормално рисоваться.
+	Почему-то он считался "задней" частью, и поэтому не рисовал. Хотя когда я его
+	поворачивал, он имел более тёмный цвет, чем кольцо.
 	"""
 
 	# Uncomment this line for a wireframe view
@@ -103,9 +123,15 @@ def setup():
 	# Simple light setup.  On Windows GL_LIGHT0 is enabled by default,
 	# but this is not the case on Linux or Mac, so remember to always 
 	# include it.
-	glEnable(GL_LIGHTING)
-	glEnable(GL_LIGHT0)
-	glEnable(GL_LIGHT1)
+	glEnable(GL_LIGHTING) 
+	""" Главный фонарик. Без него не будет цвета у предмета """
+	glEnable(GL_LIGHT0)	
+ 	glEnable(GL_LIGHT1)
+ 	"""
+ 	Дополнительные источники, для всяких отражений/преломлений нужны.
+ 	Всего 8 (до GL_LIGHT8), вот только хрен знает, какая в них разница.
+ 	Вряд ли это ограничение на количество источников света.
+ 	"""
 
 	# Define a simple function to create ctypes arrays of floats:
 	def vec(*args):
@@ -116,6 +142,9 @@ def setup():
 	Для его создания используется маленькая функция выше. Мы будем использовать 
 	numpy скорее всего
 	'''
+	# Ну там не просто маленькая функция, а именно передлка массива в вид С,
+	# безо всяких оверхедов, в один буффер подряд все данные запихивает, чтобы не быть МЕДЛЕННЫМ :3
+	# Нампи почти то же самое и делает, вроде как.
 	glLightfv(GL_LIGHT0, GL_POSITION, vec(.5, .5, 1, 0))
 	glLightfv(GL_LIGHT0, GL_SPECULAR, vec(.5, .5, 1, 1))
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, vec(1, 1, 1, 1))
@@ -125,9 +154,22 @@ def setup():
 	'''
 	Это вообще. Ну тип свойства материала, как он реагирует на освещение.
 	'''
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec(0.5, 0, 0.3, 1))
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec(0, 0, 1, 1)) 
+	""" Цвет получаеющейся фигуры. """
 	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, vec(1, 1, 1, 1))
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50)
+	"""
+	Тоже как-то связано с отржением света во время поворотов. Фигура как-то становится
+	всё ярче и ярче, потом максимальная яркость (следующей функцией как-то управляется),
+	а затем на секунду меняется цвет на тот, что указан в gl_specular.
+	"""
+	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50)	
+	""" 
+	Блёстки всякие, когда предмет повёрнут сильно. Если ноль — просто меняет цвет мгновенно
+	на более яркий. Если цифра — хуй знает. Я вижу разницу между 1 и всеми 
+	другими — с 1 цвет в самый последний момент поворота намного ярче, чем с другим числом.
+	Других отличий чота нет. Но максимальное значение — 1024. Может с большим количеством
+	треугольников что-то будет изменяться.
+	"""
 
 class Torus(object):
 	list = None
@@ -206,8 +248,8 @@ class Torus(object):
 											 GL_TRIANGLES,
 											 group,
 											 indices,
-											 ('v3f/static', vertices))
-#											 ('n3f/static', normals))
+											 ('v3f/static', vertices),
+											 ('n3f/static', normals))
 	   
 	def delete(self):
 		self.vertex_list.delete()
@@ -232,42 +274,12 @@ class Circle(object):
 		xs3 = []
 		
 		z = 0
-
-		circle_pr = [[0,0],[0, r],[0,r]]
-		vertices.extend(circle_pr[0])
-		vertices.extend(circle_pr[1])
-		vertices.extend(circle_pr[2])
-		
-		for i in range(0,slices):
-		
-			x1 = circle_pr[0][0]
-			x2 = circle_pr[2][0]
-			
-			y1 = circle_pr[0][1]
-			y2 = circle_pr[2][1]
-
-			x3 = r*cos(step*i)
-			
-			y3 = r*cos(step*i)
-			
-			circle_pr = [[x1,y1,z],[x2,y2,z],[x3,y3,z]]
-			
-			vertices.extend(circle_pr[0])
-			vertices.extend(circle_pr[1])
-			vertices.extend(circle_pr[2])
-# 
-# 		for i in range(slices):
-# 			vertices.extend([-2.5+random()*5,-2.5+random()*5,-2.5+random()*5])
-			
-# 		for i in range(len(vertices)):
-# 			if i%3 == 1:
-# 				print(vertices[i][0])
-#		print(xs3)
 	
-		indices = []
+		indices = [0, 1, 2]#, 0, 2, 3]
 		
-		for i in range(slices):
-			indices.extend([i, i+1, i+2])
+#		indices = [0,1,2,3,4,5]
+		
+		vertices = (0, 0, 1, 1, 2,2.5)
 
 		print len(indices)
 		print len(vertices)
@@ -305,14 +317,24 @@ class Circle(object):
 		
 		'''
 
-#		self.vertex_list = batch.add(len(vertices)//3,GL_TRIANGLES,('v3f/static', vertices))
-		self.vertex_list = batch.add_indexed(len(vertices)//2, 
-											 GL_TRIANGLES,
-											 group,
-											 indices,
-											 ('v2f/static', vertices))
-#											 ('n3f/static', normals))
+#		self.vertex_list = batch.add(len(vertices)//2,GL_TRIANGLES,group,('v3f/static', vertices))
+# 		self.vertex_list = batch.add_indexed(4, 
+# 											 GL_TRIANGLES,
+# 											 group,
+# 											 indices,
+# 											 ('v2i', vertices))
+# #											 ('n3f/static', normals))
 	   
+# 		self.vertex_list = batch.add_indexed(len(vertices)//2, GL_TRIANGLES, group,
+#     										indices,
+#    											 ('v2f', vertices))
+
+		self.vertex_list = batch.add(3, GL_TRIANGLES, group,
+    ('v2f', (0, 1.5, 2.0, 3.5, 2.0, 1.5)))
+
+# 		self.vertex_list = batch.add(len(vertices)//2, GL_TRIANGLES, group,
+#    											 ('v2f', vertices))
+
 	def delete(self):
 		self.vertex_list.delete()
 
@@ -334,9 +356,11 @@ pyglet.clock.schedule(update)
 
 setup()
 batch = pyglet.graphics.Batch()
-#torus = Torus(1, 0.3, 30, 30
-#			 , batch=batch) #можешь поиграться с количсетвом кусочков чтобы увидеть треугольнички 
-circle = Circle(2, 50, batch=batch)
+torus = Torus(1, 0.3, 30, 30
+			 , batch=batch) #можешь поиграться с количсетвом кусочков чтобы увидеть треугольнички 
+circle = Circle(10, 50, batch=batch)
 rx = ry = rz = 0
+# ry = 200
+# rz = 50
 
 pyglet.app.run()
