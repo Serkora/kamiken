@@ -11,6 +11,8 @@ from pyglet.window import *
 
 from random import random
 
+import numpy as np
+
 try:
 	# Try and create a window with multisampling (antialiasing)
 	config = Config(sample_buffers=1, samples=4, 
@@ -91,7 +93,7 @@ def on_draw():
 	остаётся тот, что был. Если же он ближе — то рисуется "поверх" имевшегося там объекта.
 	"""
 	glLoadIdentity()
-	glTranslatef(0, 0, -10)#эта функция двигает "камеру". Сейчас она двигается 
+	glTranslatef(0, 0, CAMDIST)#эта функция двигает "камеру". Сейчас она двигается 
 	#"вверх", в сторону зрителя. Можно двигать относительно модели, можно 
 	#относительно "перспективы" (туманная фраза, но суть в том, что движение
 	#происходит в зависимости от текущей матрицы)
@@ -145,18 +147,18 @@ def setup():
 	# Ну там не просто маленькая функция, а именно передлка массива в вид С,
 	# безо всяких оверхедов, в один буффер подряд все данные запихивает, чтобы не быть МЕДЛЕННЫМ :3
 	# Нампи почти то же самое и делает, вроде как.
-	glLightfv(GL_LIGHT0, GL_POSITION, vec(.5, .5, 1, 0))
+	glLightfv(GL_LIGHT0, GL_POSITION, vec(10, 10, 10, 0))
 	glLightfv(GL_LIGHT0, GL_SPECULAR, vec(.5, .5, 1, 1))
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, vec(1, 1, 1, 1))
-	glLightfv(GL_LIGHT1, GL_POSITION, vec(1, 0, .5, 0))
-	glLightfv(GL_LIGHT1, GL_DIFFUSE, vec(.5, .5, .5, 1))
-	glLightfv(GL_LIGHT1, GL_SPECULAR, vec(1, 1, 1, 1))
+	glLightfv(GL_LIGHT1, GL_POSITION, vec(-10, -10, -10, 0))
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, vec(0, 1, .5, 1))
+	glLightfv(GL_LIGHT1, GL_SPECULAR, vec(1, 0, 0, 1))
 	'''
 	Это вообще. Ну тип свойства материала, как он реагирует на освещение.
 	'''
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec(0, 0, 1, 1)) 
+	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec(0, 0, 0.3, 1)) 
 	""" Цвет получаеющейся фигуры. """
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, vec(1, 1, 1, 1))
+	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, vec(1, 0.5, 1, 1))
 	"""
 	Тоже как-то связано с отржением света во время поворотов. Фигура как-то становится
 	всё ярче и ярче, потом максимальная яркость (следующей функцией как-то управляется),
@@ -268,21 +270,28 @@ class Circle(object):
 		"""
 		r = radius
 		vertices = []
+		indices = []
 		step = (2 * pi) / (slices)
 		
-		xs2 = []
-		xs3 = []
 		
-		z = 0
-	
-		indices = [0, 1, 2]#, 0, 2, 3]
+		vertices.extend([0,0])
 		
-#		indices = [0,1,2,3,4,5]
+		for i in range(0,slices+1):
+			vertices.extend([r*sin(step*i),r*cos(step*i)])
 		
-		vertices = (0, 0, 1, 1, 2,2.5)
+		for i in range(0,slices):
+			indices.extend([0, i+1, i+2])
 
 		print len(indices)
 		print len(vertices)
+
+		
+#		indices = [0, 1, 2, 0, 2, 3]
+		
+#		indices = [0,1,2,3,4,5]
+		
+#		vertices = (0, 0, 0, 5, 0.1, 1.95, 0.2, 1.9)
+
 		# Create a list of triangle indices.
 		'''
 		Ну то есть создается нужное количество индексов (связанных с
@@ -329,14 +338,132 @@ class Circle(object):
 #     										indices,
 #    											 ('v2f', vertices))
 
-		self.vertex_list = batch.add(3, GL_TRIANGLES, group,
-    ('v2f', (0, 1.5, 2.0, 3.5, 2.0, 1.5)))
-
 # 		self.vertex_list = batch.add(len(vertices)//2, GL_TRIANGLES, group,
-#    											 ('v2f', vertices))
+# 								    ('v2f', vertices))
+
+		self.vertex_list = batch.add_indexed(len(vertices)//2, GL_TRIANGLES, group, indices,
+   											 ('v2f', vertices))
 
 	def delete(self):
 		self.vertex_list.delete()
+
+class Ring(object):
+	list = None
+	def __init__(self, radius, slices,
+				 batch, group=None):
+		# Create the vertex and normal arrays.
+		r = radius
+		vertices = []
+		indices = []
+		step = (2 * pi) / (slices)
+			
+		
+		vertices.extend([r*sin(0),r*cos(0),sin(step)])		
+ 		vertices.extend([r*sin(0),r*cos(0),0])
+
+		for i in range(0,slices+1):
+	 		vertices.extend([r*sin(step*i),r*cos(step*i),0])
+			vertices.extend([r*sin(step*i), r*cos(step*i), sin(step)])
+
+		indices.extend([0,1,2, 0,2,3])
+
+		for i in range(0,slices+1):
+			indices.extend([i*2+1,i*2,i*2+2])
+			indices.extend([i*2+1,i*2+2,i*2+3])
+
+# 		for j in range(0, slices):
+# 			for i in range(0,slices):
+# 				vertices.extend([r*sin(step*i), r*cos(step*i), sin(step*j)])
+	
+		
+		vr = np.array(vertices)
+		
+		vr = np.round(vr,4)
+		
+#		print(vr)
+	
+# 		for i in range(0,slices):
+# 			for j in range(0,(slices)):
+# 				indices.extend([i*slices, (i+1)*slices, i*slices+1])
+# 				indices.extend([i*slices+1, (i+1)*slices, (i+1)*slices+1])
+#		indices = [0,1,2, 0,2,3, 3,2,4, 3,4,5, 5,4,6, 5,6,7]
+
+		print len(indices)
+		print len(vertices)
+
+		
+#		 indices = []
+#		 for i in range(slices - 1):
+#			 for j in range(inner_slices - 1):
+#				 p = i * inner_slices + j
+#				 indices.extend([p, p + inner_slices, p + inner_slices + 1])
+#				 indices.extend([p, p + inner_slices + 1, p + 1])
+
+		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
+   											 ('v3f/static', vertices))
+
+	def delete(self):
+		self.vertex_list.delete()
+
+
+class Sphere(object):
+	list = None
+	def __init__(self, radius, slices,
+				 batch, group=None):
+		# Create the vertex and normal arrays.
+		r = radius
+		vertices = []
+		indices = []
+		step = (2 * pi) / (slices)
+			
+		
+		vertices.extend([r*sin(0),r*cos(0),sin(step)])		
+ 		vertices.extend([r*sin(0),r*cos(0),0])
+
+		for i in range(0,slices):
+	 		vertices.extend([r*sin(step*i),r*cos(step*i),0])
+			vertices.extend([r*sin(step*i), r*cos(step*i), sin(step)])
+
+		indices.extend([0,1,2, 0,2,3])
+
+		for i in range(0,slices):
+			indices.extend([i*2+1,i*2,i*2+2])
+			indices.extend([i*2+1,i*2+2,i*2+3])
+
+# 		for j in range(0, slices):
+# 			for i in range(0,slices):
+# 				vertices.extend([r*sin(step*i), r*cos(step*i), sin(step*j)])
+	
+		
+		vr = np.array(vertices)
+		
+		vr = np.round(vr,4)
+		
+#		print(vr)
+	
+# 		for i in range(0,slices):
+# 			for j in range(0,(slices)):
+# 				indices.extend([i*slices, (i+1)*slices, i*slices+1])
+# 				indices.extend([i*slices+1, (i+1)*slices, (i+1)*slices+1])
+#		indices = [0,1,2, 0,2,3, 3,2,4, 3,4,5, 5,4,6, 5,6,7]
+
+		print len(indices)
+		print len(vertices)
+
+		
+#		 indices = []
+#		 for i in range(slices - 1):
+#			 for j in range(inner_slices - 1):
+#				 p = i * inner_slices + j
+#				 indices.extend([p, p + inner_slices, p + inner_slices + 1])
+#				 indices.extend([p, p + inner_slices + 1, p + 1])
+
+		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
+   											 ('v3f/static', vertices))
+
+	def delete(self):
+		self.vertex_list.delete()
+
 
 def update(dt):
 	'''
@@ -353,12 +480,15 @@ def update(dt):
 	pass
 pyglet.clock.schedule(update)
 
+CAMDIST = -5
 
 setup()
 batch = pyglet.graphics.Batch()
-torus = Torus(1, 0.3, 30, 30
-			 , batch=batch) #можешь поиграться с количсетвом кусочков чтобы увидеть треугольнички 
-circle = Circle(10, 50, batch=batch)
+# torus = Torus(1, 0.3, 30, 30
+# 			 , batch=batch) #можешь поиграться с количсетвом кусочков чтобы увидеть треугольнички 
+#circle = Circle(5, 50, batch=batch)
+ring = Ring(2,50, batch=batch)
+#sphere = Sphere(2,20, batch=batch)
 rx = ry = rz = 0
 # ry = 200
 # rz = 50
