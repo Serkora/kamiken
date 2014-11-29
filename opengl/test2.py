@@ -374,7 +374,7 @@ class Circle(object):
 	def delete(self):
 		self.vertex_list.delete()
 
-class Ring(object):
+class Belt(object):
 	"""
 	Создаёт кольцо, имеющее некоторую плошадь.
 	"""
@@ -421,7 +421,7 @@ class Ring(object):
 	def delete(self):
 		self.vertex_list.delete()
 
-class Ring2(object):
+class Belt2(object):
 	"""
 	Колько в другой плоскости.
 	"""
@@ -468,7 +468,7 @@ class Ring2(object):
 	def delete(self):
 		self.vertex_list.delete()
 
-class Ring3(object):
+class Belt3(object):
 	"""
 	Колько в другой плоскости.
 	"""
@@ -547,7 +547,7 @@ class Cone(object):
 	def delete(self):
 		self.vertex_list.delete()
 
-class Belt(object):
+class Ring(object):
 	
 	def __init__(self, radius, inner_radius, slices, inner_slices, depth, batch, group=None):
 		r = radius
@@ -697,7 +697,7 @@ def cube(side,triangles,batch):
 
 def cylinder(radius,depth,slices,batch):
 	""" И цилиндр, вроде, норм. """
-	Ring(radius,slices,float(depth),batch)
+	Belt(radius,slices,float(depth),batch)
 	Circle(radius,slices,depth/2.,batch)
 	Circle(radius,slices,-depth/2.,batch)
 
@@ -708,7 +708,7 @@ def cone(radius,slices, height, batch):
 	
 def wizzard(radius, slices, height, batch):
 	Cone(radius, slices, height, batch)
-	Belt(radius*1.3, radius, slices, slices, height, batch)
+	Ring(radius*1.3, radius, slices, slices, height, batch)
 
 pyglet.clock.schedule(update)
 
@@ -726,8 +726,8 @@ batch = pyglet.graphics.Batch()
 
 """ Круглые предметы """
 #circle = Circle(5, 4, 0, batch=batch)
-#ring = Ring(5,50, 2, batch=batch)
-#belt = Belt(5, 3, 50, 50, 0, batch=batch)
+#belt = Belt(5,50, 2, batch=batch)
+#ring = Ring(5, 3, 50, 50, 0, batch=batch)
 #cylinder(5,10,50,batch)
 #cone(5,50,7,batch)
 wizzard(5, 30, 10, batch)
