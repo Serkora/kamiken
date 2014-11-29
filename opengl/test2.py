@@ -128,12 +128,12 @@ def setup():
 	glEnable(GL_LIGHTING) 
 	""" Главный фонарик. Без него не будет цвета у предмета """
 	glEnable(GL_LIGHT0)	
- 	glEnable(GL_LIGHT1)
- 	"""
- 	Дополнительные источники, для всяких отражений/преломлений нужны.
- 	Всего 8 (до GL_LIGHT8), вот только хрен знает, какая в них разница.
- 	Вряд ли это ограничение на количество источников света.
- 	"""
+	glEnable(GL_LIGHT1)
+	"""
+	Дополнительные источники, для всяких отражений/преломлений нужны.
+	Всего 8 (до GL_LIGHT8), вот только хрен знает, какая в них разница.
+	Вряд ли это ограничение на количество источников света.
+	"""
 
 	# Define a simple function to create ctypes arrays of floats:
 	def vec(*args):
@@ -397,7 +397,7 @@ class Ring(object):
  		точки на две как бы чуть отстоящие друг от друга окружности.
  		"""
 		for i in range(1,slices+1):
-	 		vertices.extend([r*sin(step*i),r*cos(step*i),-width/2.])
+			vertices.extend([r*sin(step*i),r*cos(step*i),-width/2.])
 			vertices.extend([r*sin(step*i), r*cos(step*i),width/2.])
 
 
@@ -444,7 +444,7 @@ class Ring2(object):
  		точки на две как бы чуть отстоящие друг от друга окружности.
  		"""
 		for i in range(1,slices+1):
-	 		vertices.extend([r*sin(step*i),-width/2., r*cos(step*i)])
+			vertices.extend([r*sin(step*i),-width/2., r*cos(step*i)])
 			vertices.extend([r*sin(step*i),width/2., r*cos(step*i)])
 
 
@@ -491,7 +491,7 @@ class Ring3(object):
  		точки на две как бы чуть отстоящие друг от друга окружности.
  		"""
 		for i in range(1,slices+1):
-	 		vertices.extend([-width/2.,r*sin(step*i),r*cos(step*i)])
+			vertices.extend([-width/2.,r*sin(step*i),r*cos(step*i)])
 			vertices.extend([width/2.,r*sin(step*i),r*cos(step*i)])
 
 
@@ -546,6 +546,28 @@ class Cone(object):
 
 	def delete(self):
 		self.vertex_list.delete()
+
+class Belt(object):
+	
+	def __init__(self, radius, inner_radius, slices, inner_slices, depth, batch, group=None):
+		r = radius
+		ir = inner_radius
+		vertices = []
+		indices = []
+		step = (2*pi) / slices
+		istep = (2*pi) / inner_slices
+		
+		#vertices.extend([0, 0, 0])
+		for i in range(0,slices+1):
+			vertices.extend([r*sin(step*i),r*cos(step*i),depth])
+		#for j in range(0,islices+1):
+			vertices.extend([ir*sin(istep*i),ir*cos(istep*i),depth])
+			
+		for i in range(0,slices*2):
+			indices.extend([i, i+1, i+2])
+
+		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
+																	('v3f/static', vertices))
 
 class Sphere(object):
 	"""
@@ -626,8 +648,8 @@ class Sphere(object):
 # 				indices.extend([i*slices+1, (i+1)*slices, (i+1)*slices+1])
 #		indices = [0,1,2, 0,2,3, 3,2,4, 3,4,5, 5,4,6, 5,6,7]
 
-		print len(indices)
-		print len(vertices)
+		print (len(indices))
+		print (len(vertices))
 
 		
 #		 indices = []
@@ -683,6 +705,10 @@ def cone(radius,slices, height, batch):
 	""" Конус и конус. """
 	Circle(radius, slices, height, batch)
 	Cone(radius, slices, height, batch)
+	
+def wizzard(radius, slices, height, batch):
+	Cone(radius, slices, height, batch)
+	Belt(radius*1.3, radius, slices, slices, height, batch)
 
 pyglet.clock.schedule(update)
 
@@ -695,15 +721,16 @@ batch = pyglet.graphics.Batch()
 #torus = Torus(1, 0.3, 30, 30, batch=batch) #можешь поиграться с количсетвом кусочков чтобы увидеть треугольнички 
 
 """ Углы-уголки """
-#square = Square(5,150,axis='xy',level=1,batch=batch)
+#square = Square(5,3,axis='yz',level=1,batch=batch)
 #cube(7,50,batch)
 
 """ Круглые предметы """
-#circle = Circle(5, 50, 0, batch=batch)
+#circle = Circle(5, 4, 0, batch=batch)
 #ring = Ring(5,50, 2, batch=batch)
-#Contact = Ring(5,50, 2, batch=batch), Ring2(5,50, 2, batch=batch), Ring3(5,50, 2, batch=batch)
+#belt = Belt(5, 3, 50, 50, 0, batch=batch)
 #cylinder(5,10,50,batch)
 #cone(5,50,7,batch)
+wizzard(5, 30, 10, batch)
 
 """ Флагман """
 #sphere = Sphere(5,200, batch=batch)
