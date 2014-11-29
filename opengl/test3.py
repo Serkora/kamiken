@@ -578,35 +578,9 @@ class Sphere(object):
 		r = radius
 		vertices = []
 		indices = []
+		normals = []
 		step = (2 * pi) / (slices)
 		
-		
-# 		vertices.extend([r*sin(0),r*cos(0),sin(step)])		
-# 		vertices.extend([r*sin(0),r*cos(0),0])
-
-		"""
-		for i in range(0,triangles):
-			for j in range(0,triangles):
-				vertices.extend([(side/2)-i*step, (side/2)-j*step,level*(side/2)])
-
-		for i in range(triangles-1):
-			for j in range(triangles-1):
-				indices.extend([triangles * i + j, triangles * (i+1) + j, triangles * i + j + 1])
-				indices.extend([triangles * i + j + 1, triangles * (i+1) + j, triangles * (i+1) + j + 1])
-		"""
- 		
-# 		for i in range(0,slices):
-# 	 		vertices.extend([r*sin(step*i),r*cos(step*i),0])
-# 			vertices.extend([r*sin(step*i), r*cos(step*i), sin(step)])
-# 
-# 		indices.extend([0,1,2, 0,2,3])
-# 
-# 		for i in range(0,slices):
-# 			indices.extend([i*2+1,i*2,i*2+2])
-# 			indices.extend([i*2+1,i*2+2,i*2+3])
-
-#		vertices.extend([0,r,0])
-
 		for i in range(0, slices):
 			for j in range(0,slices):
 				if type=="konvertik":
@@ -648,54 +622,33 @@ class Sphere(object):
 				for j in range(0,slices):
 					vertices.extend([r*sin(step*j)*cos(step*i), r*cos(step*j), sin(step*i)*r*sin(step*j)]) 
 
+		if type=="spherenormals":
+			"""
+			Попытка добавить какие-то нормали для освещения.
+			Пока что просто поставил их на тех же "углах", где и вершины (но без
+			умножения на радиус). Я не знаю, просто, где именно и как их ставить.
+			"""
+			for i in range(0,slices):
+				for j in range(0,slices):
+					vertices.extend([r*sin(step*j)*cos(step*i), r*cos(step*j), sin(step*i)*r*sin(step*j)]) 
+					normals.extend([sin(step*j)*cos(step*i), cos(step*j), sin(step*i)*sin(step*j)]) 
 
-# 		for i in range(slices-2):
-# 			for j in range(slices):
-# 				indices.extend([slices * i + j, slices * (i+1) + j, slices * i + j + 1])
-# 				indices.extend([slices * i + j + 1, slices * (i+1) + j, slices * (i+1) + j + 1])
-	
-	
+
+		"""
+		Индексы это вообще тема. Эта функция работает для всего. Я так понимаю,
+		это что-то вроде стандартного алгоритма построения. http://puu.sh/da32n/6302d58ad3.png
+		Вообще, строка в лупе по i, вопреки написанноми на картинке, почему-то, 
+		ни на что не влияет. Я думал, что дырка в вершине появится, а нет.
+		"""
 		for i in range(slices-1):
-			indices.extend([i*slices+1, 0, (i+1)*slices+1])
-			for j in range(slices-1):
+#			indices.extend([i*slices+1, 0, (i+1)*slices+1])
+			for j in range(slices):
 				indices.extend([i*slices+j+1, (i+1)*slices+j, i*slices+j+2])
 				indices.extend([i*slices+j+1, (i+1)*slices+j, (i+1)*slices+j+2])
 	
-# 		vertices = [0,1,0, 	0.05,0.95,0, 	0.1,0.9,0, 		0.15,0.85,0, 	0.2,0.8,0, 		0.25,0.75,0,
-# 							0.04,0.95,0.01, 0.08,0.9,0.02, 	0.12,0.85,0.03, 0.16,0.8,0.04, 	0.21,0.75,0.05,
-# 							0.03,0.95,0.03, 0.06,0.9,0.06, 	0.09,0.85,0.09, 0.12,0.8,0.12, 	0.15,0.75,0.15,
-# 							0.01,0.95,0.04, 0.02,0.9,0.08, 	0.03,0.85,0.12, 0.04,0.8,0.16, 	0.05,0.75,0.15]
-# 		
-# 		indices = [	1,0,6, 1,6,2, 2,6,7, 2,7,3, 3,7,8, 3,8,4, 4,8,9, 4,9,5, 5,9,10,
-# 					6,0,11, 6,11,7, 7,11,12, 7,12,8, 8,12,13, 8,13,9, 9,13,14, 9,14,10, 10,14,15,
-# 					11,0,16, 11,16,12, 12,16,17, 12,17,13, 13,17,18, 13,18,14, 14,18,19, 14,19,15, 15,19,20]
-					
-		
-#		vr = np.array(vertices)
-		
-#		vr = np.round(vr,4)
-		
-#		print(vr)
-	
-# 		for i in range(0,slices-1):
-# 			for j in range(0,(slices-1)):
-# 				indices.extend([i*slices, (i+1)*slices, i*slices+1])
-# 				indices.extend([i*slices+1, (i+1)*slices, (i+1)*slices+1])
-#		indices = [0,1,2, 0,2,3, 3,2,4, 3,4,5, 5,4,6, 5,6,7]
-
-		print (len(indices))
-		print (len(vertices))
-
-		
-#		 indices = []
-#		 for i in range(slices - 1):
-#			 for j in range(inner_slices - 1):
-#				 p = i * inner_slices + j
-#				 indices.extend([p, p + inner_slices, p + inner_slices + 1])
-#				 indices.extend([p, p + inner_slices + 1, p + 1])
-
 		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
-  											 ('v3f/static', vertices))
+  											 ('v3f/static', vertices),
+  											 ('n3f/static', normals))
 
 # 		self.vertex_list = batch.add(len(vertices)//3, GL_POINTS, group,
 #    											 ('v3f/static', vertices),
@@ -772,8 +725,8 @@ batch = pyglet.graphics.Batch()
 #sphere = Sphere(5,200, 'krugtochki', batch=batch)
 #sphere = Sphere(5,200, 'vietnam', batch=batch)
 #sphere = Sphere(5,200, 'krugkub', batch=batch) # http://puu.sh/da0lO/1d4f524a7c.png
-sphere = Sphere(5,200, 'sphere', batch=batch)
-
+#sphere = Sphere(5,200, 'sphere', batch=batch)
+sphere = Sphere(5,200, 'spherenormals', batch=batch)
 
 rx = ry = rz = 0
 # ry = 200
