@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 #  - * -  coding: UTF - 8  - * - 
 
 
@@ -12,6 +12,12 @@ from pyglet.window import *
 from random import random
 
 import numpy as np
+
+import pickle
+
+import time
+
+import matplotlib.pylab as plt
 
 try:
 	# Try and create a window with multisampling (antialiasing)
@@ -63,19 +69,25 @@ def on_resize(width, height):
 
 @window.event
 def on_key_press(symbol,modifier):
-	global rx, ry, rz
+	global rx, ry, rz, CAMDIST
 	if symbol == key.Q:
-		rx = (rx + 20)%360
+		rx = (rx + 10)%360
 	if symbol == key.A:
-		rx = (rx - 20)%360
+		rx = (rx - 10)%360
 	if symbol == key.W:
-		ry = (ry + 20)%360
+		ry = (ry + 10)%360
 	if symbol == key.S:
-		ry = (ry - 20)%360
+		ry = (ry - 10)%360
 	if symbol == key.E:
-		rz = (rz + 20)%360
+		rz = (rz + 10)%360
 	if symbol == key.D:
-		rz = (rz - 20)%360
+		rz = (rz - 10)%360
+	if symbol == key.R:		
+		CAMDIST += 1
+		glTranslatef(0, 0, CAMDIST)
+	if symbol == key.F:		
+		CAMDIST -= 1
+		glTranslatef(0, 0, CAMDIST)
 
 
 
@@ -103,7 +115,9 @@ def on_draw():
 	glRotatef(rx, 1, 0, 0)#в формате True/False по какой оси (x,y,z соответственно)
 	batch.draw()
 
+
 def setup():
+#	glBlendFunc(GL_SRC_ALPHA, GL_ONE)          # Set the blending function for translucency (note off at init time)
 	# One-time GL setup
 	glClearColor(0.2, 0.2, 0.2, 1)#чем очищать буферы
 	glColor3f(1, 1, 1)#ПРОСТО установка цвета. Чему - вообще непонятно. Но это - красный.
@@ -111,7 +125,7 @@ def setup():
 	#не будут перекрываться верхнимиОМСКОМСКОМСК
 	""" Ну это вот как раз включает ту самую проверку глубины объекта/пикселя,
 	чтобы наложение объектов друг на друга не зависело от порядка их отрисовки."""
-# 	glEnable(GL_CULL_FACE)#не видимые поверхности вообще не рисуются. Произво-
+	glEnable(GL_CULL_FACE)#не видимые поверхности вообще не рисуются. Произво-
 	#дительность и т.д. Есть подводные камни.
 	"""
 	Отключил — мой треугольничек стал нормално рисоваться.
@@ -152,19 +166,20 @@ def setup():
 	glLightfv(GL_LIGHT0, GL_DIFFUSE, vec(1, 1, 1, 1))
 	glLightfv(GL_LIGHT1, GL_POSITION, vec(-10, -10, -10, 0))
 	glLightfv(GL_LIGHT1, GL_DIFFUSE, vec(0, 1, .5, 1))
-	glLightfv(GL_LIGHT1, GL_SPECULAR, vec(1, 0, 0, 1))
+	glLightfv(GL_LIGHT1, GL_SPECULAR, vec(1, 0, 0, 1)) 
 	'''
 	Это вообще. Ну тип свойства материала, как он реагирует на освещение.
 	'''
-	glMaterialfv(GL_FRONT_AND_BACK, GL_AMBIENT_AND_DIFFUSE, vec(0, 0, 0.3, 1)) 
+	glMaterialfv(GL_FRONT, GL_AMBIENT_AND_DIFFUSE, vec(0.937, 0.647, 0.317, 1)) 
+	glMaterialfv(GL_BACK, GL_AMBIENT_AND_DIFFUSE, vec(0, 0.647, 0, 1)) 
 	""" Цвет получаеющейся фигуры. """
-	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, vec(1, 0.5, 1, 1))
+#	glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, vec(1, 0, 1, 1))
 	"""
 	Тоже как-то связано с отржением света во время поворотов. Фигура как-то становится
 	всё ярче и ярче, потом максимальная яркость (следующей функцией как-то управляется),
 	а затем на секунду меняется цвет на тот, что указан в gl_specular.
 	"""
-	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 50)	
+#	glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 0)	
 	""" 
 	Блёстки всякие, когда предмет повёрнут сильно. Если ноль — просто меняет цвет мгновенно
 	на более яркий. Если цифра — хуй знает. Я вижу разницу между 1 и всеми 
@@ -246,6 +261,7 @@ class Torus(object):
 		координатам и относительно нормалей. 
 		
 		'''
+		
 		self.vertex_list = batch.add_indexed(len(vertices)//3, 
 											 GL_TRIANGLES,
 											 group,
@@ -338,7 +354,98 @@ class Square(object):
 
 	def delete(self):
 		self.vertex_list.delete()
+
+class Cube(object):
+	"""
+	Создаётся 8 вершин единичного куба, зачем либо умножается на необходимой размер,
+	либо сначала сдвигается на 0.5 по всем осям, чтобы центр был в начале координат.
+	Далее строятся 12 треугольников для 6 граней.
+	"""
+	def __init__(self, side, batch, center = True, group=None):
+		vertices = np.array([	1,1,1, 1,0,1, 1,0,0, 1,1,0,
+								0,1,1, 0,0,1, 0,0,0, 0,1,0	])
+		if center:
+			vertices = vertices-0.5
+	
+		vertices = list(vertices*side)
+	
+		indices = [	0,4,5, 0,5,1, 1,5,6, 1,6,2, 2,6,7, 2,7,3,
+					3,7,4, 3,4,0, 4,7,6, 4,6,5, 3,0,1, 3,1,2]
 		
+		vr = vertices
+		ic = indices
+		
+		norm = []
+		
+		for i in range(0,len(indices),3):
+			p1 = [vr[ic[i]*3],vr[ic[i]*3+1],vr[ic[i]*3+2]]
+			p2 = [vr[ic[i+1]*3],vr[ic[i+1]*3+1],vr[ic[i+1]*3+2]]
+			p3 = [vr[ic[i+2]*3],vr[ic[i+2]*3+1],vr[ic[i+2]*3+2]]
+			U = np.array(p2)-np.array(p1)
+			V = np.array(p3)-np.array(p1)
+			norm.extend(list(np.cross(U,V)))
+			
+		norm = [0,0.5,0, 0.5,0,0]*4
+		
+		
+		self.vertex_list = batch.add_indexed(8, GL_TRIANGLES, group, indices, 
+											('v3f',vertices),('n3f',norm))
+		
+class Cubetr(object):
+	"""
+	Строит куб исходя из необходимого размера стороны и количества треугольников
+	на полоске грани (количество промежуточных точек между углами).
+	К сожалению, достигается это путём построения двух "бездонных коробочек",
+	квадратных каркасов, повёрнутых друг относительно друга, поэтому две пары
+	граней сливаются в две.
+	Нужно сделать две трёхгранных фигуры.
+	Корявенько работает.
+	"""
+	def __init__(self, side, prec, batch, group=None):
+		hside = float(side)/2
+		step = float(side)/prec
+		
+		vertices = []
+		indices = []
+		normals = []
+		
+
+		for x in range(0,prec+1):
+			for i in range(0,prec+1):
+				vertices.extend([hside-step*x, hside-step*i, hside])
+			for i in range(1,prec+1):
+ 				vertices.extend([hside-step*x, -hside, hside-step*i])
+			for i in range(1,prec+1):
+				vertices.extend([hside-step*x, -hside+step*i, -hside])		
+			for i in range(1,prec+1):
+				vertices.extend([hside-step*x, hside, -hside+step*i])
+
+		for z in range(0,prec+1):
+			for i in range(0,prec+1):
+				vertices.extend([-hside, hside-step*i, hside-step*z])
+			for i in range(1,prec+1):
+ 				vertices.extend([hside-step*i, -hside, hside-step*z])
+			for i in range(1,prec+1):
+				vertices.extend([hside, -hside+step*i, hside-step*z])		
+			for i in range(1,prec+1):
+				vertices.extend([-hside+step*i, hside, hside-step*z])
+
+
+		for i in range(prec):
+			for j in range(prec*4):
+				p = i*prec*4 + j + i
+				indices.extend([p, p+prec*4+1, p+prec*4+2])
+				indices.extend([p, p+prec*4+2, p+1])
+				
+		for i in range(prec,prec*2):
+			for j in range(prec*4):
+				p = i*prec*4 + j + i
+				indices.extend([p, p+prec*4+1, p+prec*4+2])
+				indices.extend([p, p+prec*4+2, p+1])
+
+		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
+											('v3f/static',vertices))
+
 class Circle(object):
 	"""
 	Дело круг на много треугольников с одной общей вершиной (в центре).
@@ -364,8 +471,11 @@ class Circle(object):
 		
 		"""
 		Центр и две соседние точки на окружности соединяются в один треугольник.
+		Создаёт треугольники в двух порядках (по и против часовой стрелке),
+		чтобы кружок был "двусторонным" при включенном gl(GL_CULL_FACE)
 		"""		
 		for i in range(0,slices):
+			indices.extend([0, i+2, i+1])
 			indices.extend([0, i+1, i+2])
 
 		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
@@ -383,40 +493,61 @@ class Belt(object):
 		r = radius
 		vertices = []
 		indices = []
+		normals = []
 		step = (2 * pi) / (slices)
 		width = width 	# ширина кольца
 		
-		""" 
-		Первые две точки. Необходимо создать до лупа, так как в лупе другой порядок
-		добавления вертексов в список.
-		"""
-		vertices.extend([r*sin(0),r*cos(0),width/2.])
-		vertices.extend([r*sin(0),r*cos(0),-width/2.])
 		"""
  		Почти то же самое, что и в случае с кругом, только тут ставятся
  		точки на две как бы чуть отстоящие друг от друга окружности.
  		"""
-		for i in range(1,slices+1):
+		for i in range(0,slices+1):
 			vertices.extend([r*sin(step*i),r*cos(step*i),-width/2.])
 			vertices.extend([r*sin(step*i), r*cos(step*i),width/2.])
-
-
-		"""
-		Опять же, первые две точки являются каким-то исключением, из-за нуля эти два
-		набора вершин не подходят под алгоритм в нижестоящем цикле.
-		"""
-		indices.extend([0,1,2, 0,2,3])
 
 		"""
 		Создаёт два треугольника на "поверхности" кольца, образующих маленький
 		прямоугольник. Разумно было бы перенять алгоритм из квадрата, он логичней, вроде как.
+		Два раза по две строки из-за gl(GL_CULL_FACE)
 		"""
 		for i in range(0,slices):
-			indices.extend([i*2+1,i*2,i*2+2])
-			indices.extend([i*2+1,i*2+2,i*2+3])
+			p11 = i*2+1
+			p12 = i*2+2
+			p13 = i*2
+			p21 = i*2+1
+			p22 = i*2+3
+			p23 = i*2+2
+			
+			indices.extend([p11,p12,p13])
+			indices.extend([p21,p22,p23])
+			
+			U = np.array(vertices[p11*3:p11*3+3])-np.array(vertices[p12*3:p12*3+3])
+			V = np.array(vertices[p12*3:p12*3+3])-np.array(vertices[p13*3:p13*3+3])
+			normal = np.cross(U,V)
+			normal = normal/np.linalg.norm(normal)
+#			print(list(normal))
+			normals.extend(list(normal))
+#			print(normals)
+		
+
+			indices.extend([p11,p13,p12])
+			indices.extend([p21,p23,p22])
+			
+			U = np.array(vertices[p21*3:p21*3+3])-np.array(vertices[p22*3:p22*3+3])
+			V = np.array(vertices[p22*3:p22*3+3])-np.array(vertices[p23*3:p23*3+3])
+			normal = np.cross(U,V)
+			normal = normal/np.linalg.norm(normal)
+			normals.extend(list(normal))
+		
+		normals.extend([0,.5,1,0,1,1])
+		
+		print(len(normals))
+		print(len(vertices))
+
 
 		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
-   											 ('v3f/static', vertices))
+   											 ('v3f/static', vertices),
+   											 ('n3f/static', normals))
 
 	def delete(self):
 		self.vertex_list.delete()
@@ -433,32 +564,22 @@ class Belt2(object):
 		step = (2 * pi) / (slices)
 		width = width 	# ширина кольца
 		
-		""" 
-		Первые две точки. Необходимо создать до лупа, так как в лупе другой порядок
-		добавления вертексов в список.
-		"""
-		vertices.extend([r*sin(0),width/2., r*cos(0)])
-		vertices.extend([r*sin(0),-width/2., r*cos(0)])
 		"""
  		Почти то же самое, что и в случае с кругом, только тут ставятся
  		точки на две как бы чуть отстоящие друг от друга окружности.
  		"""
-		for i in range(1,slices+1):
+		for i in range(0,slices+1):
 			vertices.extend([r*sin(step*i),-width/2., r*cos(step*i)])
 			vertices.extend([r*sin(step*i),width/2., r*cos(step*i)])
-
-
-		"""
-		Опять же, первые две точки являются каким-то исключением, из-за нуля эти два
-		набора вершин не подходят под алгоритм в нижестоящем цикле.
-		"""
-		indices.extend([0,1,2, 0,2,3])
 
 		"""
 		Создаёт два треугольника на "поверхности" кольца, образующих маленький
 		прямоугольник. Разумно было бы перенять алгоритм из квадрата, он логичней, вроде как.
 		"""
 		for i in range(0,slices):
+			indices.extend([i*2+1,i*2+2,i*2])
+			indices.extend([i*2+1,i*2+3,i*2+2])
+
 			indices.extend([i*2+1,i*2,i*2+2])
 			indices.extend([i*2+1,i*2+2,i*2+3])
 
@@ -480,32 +601,22 @@ class Belt3(object):
 		step = (2 * pi) / (slices)
 		width = width 	# ширина кольца
 		
-		""" 
-		Первые две точки. Необходимо создать до лупа, так как в лупе другой порядок
-		добавления вертексов в список.
-		"""
-		vertices.extend([width/2.,r*sin(0),r*cos(0)])
-		vertices.extend([-width/2.,r*sin(0),r*cos(0)])
 		"""
  		Почти то же самое, что и в случае с кругом, только тут ставятся
  		точки на две как бы чуть отстоящие друг от друга окружности.
  		"""
-		for i in range(1,slices+1):
+		for i in range(0,slices+1):
 			vertices.extend([-width/2.,r*sin(step*i),r*cos(step*i)])
 			vertices.extend([width/2.,r*sin(step*i),r*cos(step*i)])
-
-
-		"""
-		Опять же, первые две точки являются каким-то исключением, из-за нуля эти два
-		набора вершин не подходят под алгоритм в нижестоящем цикле.
-		"""
-		indices.extend([0,1,2, 0,2,3])
 
 		"""
 		Создаёт два треугольника на "поверхности" кольца, образующих маленький
 		прямоугольник. Разумно было бы перенять алгоритм из квадрата, он логичней, вроде как.
 		"""
 		for i in range(0,slices):
+			indices.extend([i*2+1,i*2+2,i*2])
+			indices.extend([i*2+1,i*2+3,i*2+2])
+
 			indices.extend([i*2+1,i*2,i*2+2])
 			indices.extend([i*2+1,i*2+2,i*2+3])
 
@@ -564,6 +675,7 @@ class Ring(object):
 			vertices.extend([ir*sin(istep*i),ir*cos(istep*i),depth])
 			
 		for i in range(0,slices*2):
+			indices.extend([i, i+2, i+1])
 			indices.extend([i, i+1, i+2])
 
 		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
@@ -591,6 +703,7 @@ class Sphere(object):
 					vertices.extend([r*sin(step*j)*cos(step*i), r*cos(step*j), r*sin(step*j)-abs(r*sin(step*j)*cos(step*i))])
 				else:
 					pass
+		
 		if type=="krugkub":
 			"""
 			Грубо говоря, коэффициент x уменьшается (имитация проекции и т.д.), потом
@@ -622,13 +735,15 @@ class Sphere(object):
 				for j in range(0,slices):
 					vertices.extend([r*sin(step*j)*cos(step*i), r*cos(step*j), sin(step*i)*r*sin(step*j)]) 
 
-		if type=="spherenormals":
+		if type=="spherenormals" and not load:
 			"""
 			Попытка добавить какие-то нормали для освещения.
 			Пока что просто поставил их на тех же "углах", где и вершины (но без
 			умножения на радиус). Я не знаю, просто, где именно и как их ставить.
+			i in range(slices+1) нужно для "зацикливания" сферы. Без этого будет
+			одна просвечивающая полоска где-то на правом боку сферы.
 			"""
-			for i in range(0,slices):
+			for i in range(0,slices+1):
 				for j in range(0,slices):
 					vertices.extend([r*sin(step*j)*cos(step*i), r*cos(step*j), sin(step*i)*r*sin(step*j)]) 
 					normals.extend([sin(step*j)*cos(step*i), cos(step*j), sin(step*i)*sin(step*j)]) 
@@ -636,28 +751,27 @@ class Sphere(object):
 
 		"""
 		Индексы это вообще тема. Эта функция работает для всего. Я так понимаю,
-		это что-то вроде стандартного алгоритма построения. http://puu.sh/da32n/6302d58ad3.png
-		Вообще, строка в лупе по i, вопреки написанноми на картинке, почему-то, 
-		ни на что не влияет. Я думал, что дырка в вершине появится, а нет.
+		это что-то вроде стандартного алгоритма построения.
 		"""
-		for i in range(slices-1):
-#			indices.extend([i*slices+1, 0, (i+1)*slices+1])
-			for j in range(slices):
-				indices.extend([i*slices+j+1, (i+1)*slices+j, i*slices+j+2])
-				indices.extend([i*slices+j+1, (i+1)*slices+j, (i+1)*slices+j+2])
+		if not load:
+			for i in range(slices+1):
+				for j in range(slices):
+					p = i*slices + j # можно вставить туда.
+					indices.extend([i*slices+j, (i+1)*slices+j, (i+1)*slices+j+1])
+					indices.extend([i*slices+j, (i+1)*slices+j+1, i*slices+j+1])
+
+		print(str(len(vertices))+" Vertices and "+str(len(indices))+" Indices")
 	
-		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
-  											 ('v3f/static', vertices),
-  											 ('n3f/static', normals))
-
-# 		self.vertex_list = batch.add(len(vertices)//3, GL_POINTS, group,
-#    											 ('v3f/static', vertices),
-#    											 ('c3B',(0,255,0)*(len(vertices)//3)))
-
+		if type=="spherenormals":
+			self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
+  												 ('v3f/static', vertices),
+  												 ('n3f/static', normals))
+		else:
+			self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
+  												 ('v3f/static', vertices))
 
 	def delete(self):
 		self.vertex_list.delete()
-
 
 def update(dt):
 	'''
@@ -700,21 +814,22 @@ def wizzard(radius, slices, height, batch):
 
 pyglet.clock.schedule(update)
 
-CAMDIST = -15
+CAMDIST = -10
 
 setup()
 batch = pyglet.graphics.Batch()
 
 """ Чужое """
-#torus = Torus(1, 0.3, 30, 30, batch=batch) #можешь поиграться с количсетвом кусочков чтобы увидеть треугольнички 
+#torus = Torus(5, 1, 20, 20, batch=batch) #можешь поиграться с количсетвом кусочков чтобы увидеть треугольнички 
 
 """ Углы-уголки """
 #square = Square(5,3,axis='yz',level=1,batch=batch)
 #cube(7,50,batch)
 
 """ Круглые предметы """
-#circle = Circle(5, 4, 0, batch=batch)
-#belt = Belt(5,50, 2, batch=batch)
+#circle = Circle(5, 10, 0, batch=batch)
+#belt = Belt(4,50, 2, batch=batch)
+#Contact = Belt(10,50, 2, batch=batch), Belt2(10,50, 2, batch=batch), Belt3(10,50, 2, batch=batch) 
 #ring = Ring(5, 3, 50, 50, 0, batch=batch)
 #cylinder(5,10,50,batch)
 #cone(5,50,7,batch)
@@ -726,7 +841,12 @@ batch = pyglet.graphics.Batch()
 #sphere = Sphere(5,200, 'vietnam', batch=batch)
 #sphere = Sphere(5,200, 'krugkub', batch=batch) # http://puu.sh/da0lO/1d4f524a7c.png
 #sphere = Sphere(5,200, 'sphere', batch=batch)
-sphere = Sphere(5,200, 'spherenormals', batch=batch)
+#sphere = Sphere(5,500, 'spherenormals', load=False, batch=batch)
+
+""" Новый куб """
+#cube = Cube(1,batch)
+#cubetr = Cubetr(5,10,batch)
+
 
 rx = ry = rz = 0
 # ry = 200
