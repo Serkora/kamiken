@@ -587,8 +587,11 @@ class Sphere(object):
 
 		for i in range(0, slices):
 			for j in range(0,slices):
-				vertices.extend([r*sin(step*j)*cos(step*i), r*cos(step*j), r*sin(step*j)-abs(r*sin(step*j)*cos(step*i))])
- 	
+#				vertices.extend([r*sin(step*j)*cos(step*i), r*cos(step*j), r*sin(step*j)-abs(r*sin(step*j)*cos(step*i))])
+# 				vertices.extend([r*sin(step*j)*cos(step*i), r*cos(step*j), 3]) 	
+				vertices.extend([r*sin(step*j)*cos(step*i), r*cos(step*j), r*sin(step*i)*cos(step*j)]) 	
+
+
 # 		for i in range(slices-2):
 # 			for j in range(slices):
 # 				indices.extend([slices * i + j, slices * (i+1) + j, slices * i + j + 1])
@@ -634,8 +637,13 @@ class Sphere(object):
 #				 indices.extend([p, p + inner_slices, p + inner_slices + 1])
 #				 indices.extend([p, p + inner_slices + 1, p + 1])
 
-		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
-   											 ('v3f/static', vertices))
+#		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
+#  											 ('v3f/static', vertices))
+
+		self.vertex_list = batch.add(len(vertices)//3, GL_POINTS, group,
+   											 ('v3f/static', vertices),
+   											 ('c3B',(0,255,0)*(len(vertices)//3)))
+
 
 	def delete(self):
 		self.vertex_list.delete()
@@ -698,25 +706,7 @@ batch = pyglet.graphics.Batch()
 #cone(5,50,7,batch)
 
 """ Флагман """
-# Какаая-то, блядь, смесь въетнамской шапки, каски и слюнявчика. Хрень какая-то, 
-# ну должно же работать. Вершины, по крайней мере, абсолютно точно верно расставлениы.
-# В первый проход цикла ставятся точки по окружности в плоскости xy,
-# Во второй (i = 1) опять проходится по окружности, но теперь максимальное значение 
-# x (ну и все промежуточные, разумеется) не 1*r (sin(pi/2)*cos(0)), а чуть меньше,
-# так как там косинус от близкого к нулю значения. В третий проход максимальное значение
-# x ещё чуть-чуть уменьшается. После половины циклов x сначала равно нулю, то есть
-# окружность целиком в плоскости yz, а потом меняет знак, что должно рисовать левое полушарие.
-# y всегда идёт r -> 0 -> -r -> 0 -> r
-# z же, в свою очередь, в первый проход ноль. Во второй принимает какие-то маленькие значения,
-# в третий чуть больше и т.д. В середине имеет максимальную амплитуду, которая потом
-# опять затухает. Всё, рисуется, чёрт возьми, сфера. Но, почему-то, нет...
-# Вот как графики функций выглядят: http://puu.sh/d9wAl/29d08833db.png
-# А алгоритм подбора индексов был сдела по образу того маленького "уголка",
-# координаты и индексы которого я вручную вбивал с бумажки. Вроде, строил верно кусочек.
-# Алгоритм должен точно повторять тот список, но строится херня.
-# Но судя по тому, что коник сферы он там где-то рисовать начинает, возможно, 
-# проблема начинается позже, а из-за чего — ниясна.
-#sphere = Sphere(3,50, batch=batch)
+#sphere = Sphere(5,200, batch=batch)
 
 
 
