@@ -420,6 +420,53 @@ class Belt(object):
 
 	def delete(self):
 		self.vertex_list.delete()
+		
+class Belt_d(object):
+	"""
+	Создаёт кольцо, которое можно двигать вдоль z.
+	"""
+	list = None
+	def __init__(self, radius, slices, width, depth, batch, group=None):
+		r = radius
+		vertices = []
+		indices = []
+		step = (2 * pi) / (slices)
+		width = width 	# ширина кольца
+		
+		""" 
+		Первые две точки. Необходимо создать до лупа, так как в лупе другой порядок
+		добавления вертексов в список.
+		"""
+		vertices.extend([r*sin(0),r*cos(0),width/2.+depth])
+		vertices.extend([r*sin(0),r*cos(0),-width/2.+depth])
+		"""
+ 		Почти то же самое, что и в случае с кругом, только тут ставятся
+ 		точки на две как бы чуть отстоящие друг от друга окружности.
+ 		"""
+		for i in range(1,slices+1):
+			vertices.extend([r*sin(step*i),r*cos(step*i),-width/2.+depth])
+			vertices.extend([r*sin(step*i), r*cos(step*i),width/2.+depth])
+
+
+		"""
+		Опять же, первые две точки являются каким-то исключением, из-за нуля эти два
+		набора вершин не подходят под алгоритм в нижестоящем цикле.
+		"""
+		indices.extend([0,1,2, 0,2,3])
+
+		"""
+		Создаёт два треугольника на "поверхности" кольца, образующих маленький
+		прямоугольник. Разумно было бы перенять алгоритм из квадрата, он логичней, вроде как.
+		"""
+		for i in range(0,slices):
+			indices.extend([i*2+1,i*2,i*2+2])
+			indices.extend([i*2+1,i*2+2,i*2+3])
+
+		self.vertex_list = batch.add_indexed(len(vertices)//3, GL_TRIANGLES, group, indices,
+   											 ('v3f/static', vertices))
+
+	def delete(self):
+		self.vertex_list.delete()
 
 class Belt2(object):
 	"""
@@ -709,6 +756,13 @@ def cone(radius,slices, height, batch):
 def wizzard(radius, slices, height, batch):
 	Cone(radius, slices, height, batch)
 	Ring(radius*1.3, radius, slices, slices, height, batch)
+	
+def sphere_d(radius, slices, batch):
+	
+	step = radius / slices
+	for n in range(slices//2):
+		belt_radius = radius * sin(step*n) / 2
+		Belt_d(belt_radius, slices, step, step*n, batch)
 
 pyglet.clock.schedule(update)
 
@@ -730,8 +784,9 @@ batch = pyglet.graphics.Batch()
 #ring = Ring(5, 3, 50, 50, 0, batch=batch)
 #cylinder(5,10,50,batch)
 #cone(5,50,7,batch)
-wizzard(5, 30, 10, batch)
-
+#wizzard(5, 30, 10, batch)
+sphere_d(5,100,batch)
+#belt = Belt_d(5, 50, 2, -10, batch=batch)
 """ Флагман """
 #sphere = Sphere(5,200, batch=batch)
 
