@@ -269,8 +269,8 @@ class Circle(object):
 		for i in range(slices):
 			indices.extend([i, i+1, i+2])
 
-		print len(indices)
-		print len(vertices)
+		print( len(indices))
+		print (len(vertices))
 		# Create a list of triangle indices.
 		'''
 		Ну то есть создается нужное количество индексов (связанных с
@@ -307,7 +307,7 @@ class Circle(object):
 
 #		self.vertex_list = batch.add(len(vertices)//3,GL_TRIANGLES,('v3f/static', vertices))
 		self.vertex_list = batch.add_indexed(len(vertices)//2, 
-											 GL_TRIANGLES,
+											 GL_TRIANGLE_STRIP,
 											 group,
 											 indices,
 											 ('v2f/static', vertices))
@@ -322,12 +322,12 @@ def update(dt):
 	глобальное пространство и не сами координаты, а остаток их деления на 360.
 	'''
 	global rx, ry, rz
-# 	rx += dt * 30
-# 	ry += dt * 80
-# 	rz += dt * 30
-# 	rx %= 360
-# 	ry %= 360
-# 	rz %= 360
+	rx += dt * 30
+	ry += dt * 80
+	rz += dt * 30
+	rx %= 360
+	ry %= 360
+	rz %= 360
 	pass
 pyglet.clock.schedule(update)
 
@@ -336,7 +336,7 @@ setup()
 batch = pyglet.graphics.Batch()
 #torus = Torus(1, 0.3, 30, 30
 #			 , batch=batch) #можешь поиграться с количсетвом кусочков чтобы увидеть треугольнички 
-circle = Circle(2, 50, batch=batch)
+circle = Circle(4, 50, batch=batch)
 rx = ry = rz = 0
 
 pyglet.app.run()
