@@ -77,28 +77,38 @@ class Generator(object):
 					self.walls.append([x,y])
 					
 	def doors(self):
-		
+		'''
+		Что то не так все таки. Как то он двери неправильно ставит -
+		вроде сказал ему, ставь только если ровно два соседних по 
+		вертикали или горизонтали тайла - пустые. А он часто рисует 
+		зачем то соседние с угловыми.
+		'''
 		for x in range(self.width-1):
 			for y in range(self.height-1):
-				coordinates = self.super_function(x, y)
+				coordinates = self.super_function(x, y, True)
+				
 				count = 0
 				count_w = 0
 				if self.dungeon[x,y] == 1:
 					for cord in coordinates:
 						if self.dungeon[cord[0],cord[1]] == 0:
 							count+=1
-						elif self.dungeon[cord[0],cord[1]] == 1:
-							count_w+=1
-					if count >4 and count_w>=2:
+						#elif self.dungeon[cord[0],cord[1]] == 1:
+						#	count_w+=1
+					if count == 2: #and count_w>=2:
 						self.dungeon[x,y] = 2
 	
-	def super_function(self, I, J): 
+	def super_function(self, I, J, flag=False): 
 		coordinates = []
 		for i in range(I - 1, I + 2):
 			for j in range(J - 1, J + 2):
+				if flag:
 				#print(i , j )
-				#if (i - j) % 2 != 0:
-				coordinates.append([i, j])
+					if abs(i - j) % 2 != 1:
+						coordinates.append([i, j])
+						#print('True')
+				else:
+					coordinates.append([i, j])
 		return(coordinates)
 		
 		
