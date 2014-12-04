@@ -82,11 +82,14 @@ class Generator(object):
 			for y in range(self.height-1):
 				coordinates = self.super_function(x, y)
 				count = 0
+				count_w = 0
 				if self.dungeon[x,y] == 1:
 					for cord in coordinates:
 						if self.dungeon[cord[0],cord[1]] == 0:
 							count+=1
-					if count >4:
+						elif self.dungeon[cord[0],cord[1]] == 1:
+							count_w+=1
+					if count >4 and count_w>=2:
 						self.dungeon[x,y] = 2
 	
 	def super_function(self, I, J): 
