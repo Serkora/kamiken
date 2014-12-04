@@ -9,7 +9,7 @@ import curses
 
 tiles = {			0.0		: '.',
 				1.0		: '#',
-				2.0		: ' ',
+				2.0		: '/',
 				3.0		: ' ',
 				4.0		: ' '		}
 
@@ -75,6 +75,19 @@ class Generator(object):
 					self.space.append([x,y])
 				else:
 					self.walls.append([x,y])
+					
+	def doors(self):
+		
+		for x in range(self.width-1):
+			for y in range(self.height-1):
+				coordinates = self.super_function(x, y)
+				count = 0
+				if self.dungeon[x,y] == 1:
+					for cord in coordinates:
+						if self.dungeon[cord[0],cord[1]] == 0:
+							count+=1
+					if count >4:
+						self.dungeon[x,y] = 2
 	
 	def super_function(self, I, J): 
 		coordinates = []
@@ -119,7 +132,15 @@ generator = Generator(win)
 g - новое подземелье, заполняет # 
 r - стреляем семенами, одно нажатие 10 пулек
 c - из семян растут комнаты, одно нажатие - одна итерация
-b - предустановка, генерирует такие себе пещерки
+o - копаем более хитрым образом: стреляет в массив один раз, затем расширяет дырку 
+на одну клетку, затем выбирает случайно одну из клеток стены, копает вокруг нее,
+снова выбирает случайную клетку стены... Все равно не обязательно замкнуто, потому
+что если пещера касается края матрицы, то копаие происходит на противоположной стенке.
+d - нинужная пока функция которая ничего полезного не делает. кроме того, что
+позволяет обойтись без обязательно связных областей - она заменяет некоторые тайлы стены
+на "дверь". Можно попросту удалять стену в этом месте, и тогда области точно станут 
+замкнутыми (если между ними один тайл, разумеется)
+b - предустановка, генерирует такие себе пещерки (не обязательно связные. но часто)
 q - корректный выход
 '''
 
@@ -144,6 +165,9 @@ while True:
 		generator.shooting(0)
 		generator.growing(1)
 		generator.growing2()
+		win.draw(generator)
+	elif c == ord('d'):
+		generator.doors()
 		win.draw(generator)
 	elif c == ord('b'):
 		generator = Generator(win)
