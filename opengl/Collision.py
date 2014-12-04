@@ -267,7 +267,7 @@ class World(Window):
 # 		cubeS = Cubecol(0.5,self.batchS,offset=(-4,-5,-4))
 # 		cubeW = Cubecol(0.5,self.batchW,offset=(4,-5,4))
 		for vert in self.map.walls:
-			cube = Cubecol(0.5,self.batch, offset=(vert[0],-5,vert[1]))
+			cube = Cubecol(1,self.batch, offset=(vert[0],-5,vert[1]))
 			self.cubes.append(cube)
 	
 	def update(self, dt):

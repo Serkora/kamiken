@@ -5,7 +5,9 @@ import pyglet
 from pyglet.gl import *
 from pyglet.window import *
 import numpy as np
+from numpy import ones
 from math import copysign, sin, cos, pi
+import random
 
 # from obj import OBJ
 
@@ -130,7 +132,7 @@ class Cubecol(object):
 		self.xright = self.xleft + side
 
 class World(Window):
-	def __init__(self,player):
+	def __init__(self,player,map):
 		"""
 		Всё стандартно. Два батча — мир и коробки, для разных материалов.
 		Игрок, вызывается функция создания коробочек.
@@ -147,6 +149,7 @@ class World(Window):
 		self.graphics_batches()
 		self.make_cubes()
 		self.textures_and_text()
+		self.map = map
 		pyglet.clock.schedule_interval(self.update, 1.0 / 60) # чо-то не пашет, всё равно
 
 	def graphics_batches(self):
@@ -175,9 +178,12 @@ class World(Window):
 		и заносит их в список объектов.
 		"""
 		self.box = Cubecol(30,self.batch_box,center = True, type = "inside")
-		self.cube = Cubecol(2,self.batch,offset=(3,-7,-7))
+		#self.cube = Cubecol(2,self.batch,offset=(3,-7,-7))
 # 		self.sphere = Sphere(4,1000,self.batch)
 # 		self.sphere = Sphere(6,1000,self.batch_cup)
+		for vert in self.map.walls:
+			cube = Cubecol(0.1,self.batch, offset=(vert[0],vert[1],0))
+			self.cubes.append(cube)
 
 	def update(self, dt):
 		"""
@@ -479,6 +485,61 @@ class Test(object):
 		
 	def draw(self):
 		self.object.draw()
+		
+		
+class Generator(object):
+	
+	def __init__(self, width, height, bullets, N):
+		self.width = width
+		self.height = height
+		self.space = []
+		self.walls = []
+		self.bullets = bullets
+		self.dungeon = ones([self.width, self.height])
+		self.coordinates = []
+		self.shooting()
+		self.growing(N)
+		print(self.dungeon)
+		#for i in range(4):
+		#	self.growing()
+
+	def shooting(self):
+		for i in range(self.bullets):
+			x = random.randint(0, self.width-1)
+			y = random.randint(0, self.height-1)
+			self.dungeon[x, y] = 0
+			self.counting()
+	
+	def growing(self, N):
+		for i in range(N):
+			for vert in self.space:
+				self.coordinates = self.super_function(vert[0], vert[1])
+				#print(coordinates)
+				for cord in self.coordinates:
+				#print(cord)
+					self.dungeon[cord[0],cord[1]] = 0
+			self.counting()
+			#print(self.dungeon)
+		
+	def counting(self):
+		self.space = []
+		self.walls = []
+		
+		for x in range(self.width-1):
+			for y in range(self.height-1):
+				
+				if self.dungeon[x,y] == 0:
+					self.space.append([x,y])
+				else:
+					self.walls.append([x,y])
+
+	def super_function(self, I, J): 
+		coordinates = []
+		for i in range(I - 1, I + 2):
+			for j in range(J - 1, J + 2):
+				coordinates.append([i, j])
+		return(coordinates)
+
 
 i = 0
 time1 = time.time()
@@ -501,7 +562,8 @@ cups = []
 # cups.append(cup)
 	
 player = Player()
-world = World(player)
+map = Generator(20,20,10,2)
+world = World(player, map)
 keystate = key.KeyStateHandler()
 world.push_handlers(keystate)
 # world.set_fullscreen(True)
