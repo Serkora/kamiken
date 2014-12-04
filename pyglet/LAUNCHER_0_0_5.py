@@ -1,6 +1,10 @@
 #!/usr/bin/env python3
 # -*- coding: UTF-8 -*-
 
+'''
+KAMIKEN Network Launcher Version 0.0.5
+'''
+
 """
 Из kamiken_0_3_0 импортируются все необходимые константы.
 из Клиента/Сервера импортируются нужны классы.

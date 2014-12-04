@@ -23,7 +23,7 @@ try:
 	# Try and create a window with multisampling (antialiasing)
 	config = Config(sample_buffers=1, samples=4, 
 					depth_size=16, double_buffer=True,)
-	window = pyglet.window.Window(resizable=True, config=config,width=500,height=500)
+	window = pyglet.window.Window(resizable=True, config=config)
 except pyglet.window.NoSuchConfigException:
 	# Fall back to no multisampling for old hardware
 	window = pyglet.window.Window(resizable=True)
@@ -44,7 +44,7 @@ def on_resize(width, height):
 	Как было там в комментах написано, эта функция как "сбрасывает" матрицу,
 	загружая единичную (которая identity matrix по-английски).
 	"""
-	gluPerspective(45., width / float(height), .1, 100.)#это устанавливает как
+	gluPerspective(60., width / float(height), .1, 100.)#это устанавливает как
 	#бы угол зрения что-ли
 	"""
 	Первое да, угол, вот только почему-то его изменение ведёт к изменению размера
@@ -93,8 +93,6 @@ def on_key_press(symbol,modifier):
 
 @window.event
 def on_draw():
-	global time1
-	time1 = time.time()
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT) #это очищает так называемые 
 	#буферы, в первом хранится информация о цвете, а во втором непонятно о чем,
 	#но он очевидно связан с "глубиной".
@@ -116,7 +114,6 @@ def on_draw():
 	glRotatef(ry, 0, 1, 0)#на сколько градусов (м.б. отрицательным), остальные
 	glRotatef(rx, 1, 0, 0)#в формате True/False по какой оси (x,y,z соответственно)
 	batch.draw()
-	print(time.time() - time1)
 
 
 def setup():
@@ -128,7 +125,7 @@ def setup():
 	#не будут перекрываться верхнимиОМСКОМСКОМСК
 	""" Ну это вот как раз включает ту самую проверку глубины объекта/пикселя,
 	чтобы наложение объектов друг на друга не зависело от порядка их отрисовки."""
-#	glEnable(GL_CULL_FACE)#не видимые поверхности вообще не рисуются. Произво-
+	glEnable(GL_CULL_FACE)#не видимые поверхности вообще не рисуются. Произво-
 	#дительность и т.д. Есть подводные камни.
 	"""
 	Отключил — мой треугольничек стал нормално рисоваться.
@@ -738,7 +735,7 @@ class Sphere(object):
 				for j in range(0,slices):
 					vertices.extend([r*sin(step*j)*cos(step*i), r*cos(step*j), sin(step*i)*r*sin(step*j)]) 
 
-		if type=="spherenormals":
+		if type=="spherenormals" and not load:
 			"""
 			Попытка добавить какие-то нормали для освещения.
 			Пока что просто поставил их на тех же "углах", где и вершины (но без
@@ -756,11 +753,12 @@ class Sphere(object):
 		Индексы это вообще тема. Эта функция работает для всего. Я так понимаю,
 		это что-то вроде стандартного алгоритма построения.
 		"""
-		for i in range(slices+1):
-			for j in range(slices):
-				p = i*slices + j # можно вставить туда.
-				indices.extend([i*slices+j, (i+1)*slices+j, (i+1)*slices+j+1])
-				indices.extend([i*slices+j, (i+1)*slices+j+1, i*slices+j+1])
+		if not load:
+			for i in range(slices+1):
+				for j in range(slices):
+					p = i*slices + j # можно вставить туда.
+					indices.extend([i*slices+j, (i+1)*slices+j, (i+1)*slices+j+1])
+					indices.extend([i*slices+j, (i+1)*slices+j+1, i*slices+j+1])
 
 		print(str(len(vertices))+" Vertices and "+str(len(indices))+" Indices")
 	
@@ -774,11 +772,6 @@ class Sphere(object):
 
 	def delete(self):
 		self.vertex_list.delete()
-
-class Test(object):
-	def __init__(self):
-		vertices = [0,0,-5, 0,1,-5, 1,1,-5]
-		self.verts = batch.add(3, GL_TRIANGLES, None, ('v3f',vertices))
 
 def update(dt):
 	'''
@@ -819,10 +812,9 @@ def wizzard(radius, slices, height, batch):
 	Cone(radius, slices, height, batch)
 	Ring(radius*1.3, radius, slices, slices, height, batch)
 
-
 pyglet.clock.schedule(update)
 
-CAMDIST = -5
+CAMDIST = -10
 
 setup()
 batch = pyglet.graphics.Batch()
@@ -849,13 +841,12 @@ batch = pyglet.graphics.Batch()
 #sphere = Sphere(5,200, 'vietnam', batch=batch)
 #sphere = Sphere(5,200, 'krugkub', batch=batch) # http://puu.sh/da0lO/1d4f524a7c.png
 #sphere = Sphere(5,200, 'sphere', batch=batch)
-sphere = Sphere(5,1000, 'spherenormals', batch=batch)
+#sphere = Sphere(5,500, 'spherenormals', load=False, batch=batch)
 
 """ Новый куб """
 #cube = Cube(1,batch)
 #cubetr = Cubetr(5,10,batch)
 
-#test = Test()
 
 rx = ry = rz = 0
 # ry = 200
