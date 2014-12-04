@@ -118,7 +118,7 @@ class World(Window):
 		#self.cubes.append(cube)
 		print(self.map.dungeon)
 		for vert in self.map.walls:
-			cube = Cubecol(0.5,self.batch, offset=(vert[0],-5,vert[1]))
+			cube = Cubecol(2.3,self.batch, offset=(vert[0],-5,vert[1]))
 			self.cubes.append(cube)
 
 	
