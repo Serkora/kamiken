@@ -51,6 +51,11 @@ class Generator(object):
 					except:
 						pass
 		self.counting()
+		
+	def growing2(self,N):
+		for space in self.space:
+			coordinates = self.super_function(vert[0], vert[1])
+			cord = random.choice(coordinates)
 
 	def counting(self):
 		self.space = []
@@ -127,11 +132,15 @@ while True:
 	elif c == ord('r'):
 		generator.shooting(10)
 		win.draw(generator)
+	elif c == ord('o'):
+		generator.shooting(1)
+		
 	elif c == ord('b'):
 		generator = Generator(win)
 		generator.shooting(50)
 		generator.growing(5)
 		win.draw(generator)
+		
 	
 
 
