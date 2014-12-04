@@ -6,11 +6,13 @@ from pyglet.gl import *
 from pyglet.window import *
 import numpy as np
 from math import copysign
+from numpy import ones
 
 import socket
 from threading import Thread
 
 from random import random
+import random
 
 import ctypes
 
@@ -237,7 +239,8 @@ class World(Window):
 		Создаётся несколько ящиков с разными сдвигами от начала координат
 		и заносит их в список объектов.
 		"""
-# 		self.cubes = []
+		self.map = map
+		self.cubes = []
 # 		cube = Cubecol(4, self.batch, offset=(-0.5, -2, -0.25))
 # 		self.cubes.append(cube)
 # 		for i in range(1,4):
@@ -263,6 +266,9 @@ class World(Window):
 # 		cubeE = Cubecol(0.5,self.batchE,offset=(4,-5,-4))
 # 		cubeS = Cubecol(0.5,self.batchS,offset=(-4,-5,-4))
 # 		cubeW = Cubecol(0.5,self.batchW,offset=(4,-5,4))
+		for vert in self.map.walls:
+			cube = Cubecol(0.5,self.batch, offset=(vert[0],-5,vert[1]))
+			self.cubes.append(cube)
 	
 	def update(self, dt):
 		"""
@@ -596,6 +602,63 @@ class World(Window):
 			self.player.zpos = self.player.zp + self.player.zstrafe
 			self.player.xpos = self.player.xp + self.player.xstrafe
 		self.netsend()
+
+class Generator(object):
+	
+	def __init__(self, width, height, bullets, N):
+		self.width = width
+		self.height = height
+		self.space = []
+		self.walls = []
+		self.bullets = bullets
+		self.dungeon = ones([self.width, self.height])
+		self.coordinates = []
+		self.shooting()
+		self.growing(N)
+		print(self.dungeon)
+		#for i in range(4):
+		#	self.growing()
+
+	def shooting(self):
+		for i in range(self.bullets):
+			x = random.randint(0, self.width-1)
+			y = random.randint(0, self.height-1)
+			self.dungeon[x, y] = 0
+			self.counting()
+	
+	def growing(self, N):
+		for i in range(N):
+			for vert in self.space:
+				self.coordinates = self.super_function(vert[0], vert[1])
+				#print(coordinates)
+				for cord in self.coordinates:
+				#print(cord)
+					self.dungeon[cord[0],cord[1]] = 0
+			self.counting()
+			#print(self.dungeon)
+		
+	def counting(self):
+		self.space = []
+		self.walls = []
+		
+		for x in range(self.width-1):
+			for y in range(self.height-1):
+				
+				if self.dungeon[x,y] == 0:
+					self.space.append([x,y])
+				else:
+					self.walls.append([x,y])
+
+	def super_function(self, I, J): 
+		coordinates = []
+		for i in range(I - 1, I + 2):
+			for j in range(J - 1, J + 2):
+				coordinates.append([i, j])
+		return(coordinates)
+
+		
+map = Generator(20,20,10,2)
+
 	
 player = Player()
 world = World(player)
