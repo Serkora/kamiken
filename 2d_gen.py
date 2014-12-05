@@ -2,7 +2,7 @@
 
 
 import numpy as np
-from numpy import ones
+from numpy import ones, eye, zeros
 import random
 import curses
 
@@ -16,9 +16,9 @@ tiles = {			0.0		: '.',
 
 class Generator(object):
 	
-	def __init__(self, window):
-		self.width = window.width
-		self.height = window.height
+	def __init__(self, height, width):
+		self.width = width
+		self.height = height
 		self.space = []
 		self.walls = []
 		self.dungeon = ones([self.width, self.height])
@@ -36,35 +36,76 @@ class Generator(object):
 			#Здесь они используются только для роста, а в collisions
 			#по ним и рисуется (список из двух координат). добавить
 			#третью координату- будет трехмерное подземелье
+			
+	def clearing(self, x, y):
+		if 0<=x<=self.width-1 and 0<=y<=self.height-1:
+			self.dungeon[x,y] = 0
+		else:
+			pass
 	'''
-	Супер функция пригодилась (как я и предполагал) - небольшими изменениями
-	в ней можно менять форму роста. Пока просто стираются все смежные еди-
-	нички, раскомментив условие (или поменяв его) можно получить наркоманию
+	Рост из пустых клеток: все смежные с каждой пустой клеткой стираются.
+	При малом N комнатки получаются правильной формы, при достаточном
+	для соединения нескольких комнат в одну - самой разнообразной
 	'''
 	def growing(self, N):
 		for i in range(N):
 			for vert in self.space:
 				coordinates = self.super_function(vert[0], vert[1])
 				for cord in coordinates:
-					try:
-						self.dungeon[cord[0],cord[1]] = 0
-					except:
-						pass
+					self.clearing(cord[0],cord[1])
 		self.counting()
-		
+	'''
+	Случайным образом выбирается одна клетка из смежных с пустой. Все 
+	смежные с ней клетки очищаются. Повторяется для всех пустых клеток,
+	имеющихся в self.space на момент вызова функции.
+	'''
 	def growing2(self):
 		for vert in self.space:
 			coordinates = self.super_function(vert[0], vert[1])
 			cord = random.choice(coordinates)
 			new_coordinates = self.super_function(cord[0],cord[1])
 			for cord in new_coordinates:
-				try:
-					self.dungeon[cord[0],cord[1]] = 0
-				except:
-					pass
+				self.clearing(cord[0],cord[1])
 		self.counting()
+		
+		
+	def growing3(self, N):
+		for i in range(N):
+			for vert in self.space:
+				self.space.remove(vert)
+				coordinates = self.super_function(vert[0], vert[1], True)
+				cord = random.choice(coordinates)
+				self.clearing(cord[0],cord[1])
+			self.counting()
 			
-
+	
+	def space_counting(self):
+		rooms = []
+		n = 0
+		for i in range(len(self.space)):
+			for j in range(len(self.space)):
+				if self.adjacency_matrix[i,j] == 1:
+					rooms[n].append(self.cord_to_ind[i],self.cord_to_ind[j])
+					
+	
+	
+	def adjacency(self):
+		self.cord_to_ind = {}.fromkeys(range(len(self.space)))  
+		for key in self.cord_to_ind:
+			self.cord_to_ind[key] = self.space[key]
+		#print(self.cord_to_ind)
+		self.adjacency_matrix = zeros([len(self.space),len(self.space)])
+		for i in range(len(self.space)):
+			for j in range(len(self.space)):
+				vert = self.cord_to_ind[i]
+				coordinates = self.super_function(vert[0], vert[1], True)
+				if self.cord_to_ind[j] in coordinates:
+					self.adjacency_matrix[i,j] = 1
+		#print(self.adjacency_matrix)
+	
+	#def connection(self):
+		
+	
 	def counting(self):
 		self.space = []
 		self.walls = []
@@ -97,18 +138,22 @@ class Generator(object):
 						#	count_w+=1
 					if count == 2: #and count_w>=2:
 						self.dungeon[x,y] = 2
-	
+	'''
+	По дефолту флаг ложь - проверяет все смежные клетки (по горизонталям,
+	вертикалям и диагоналям). Флаг истина - проверяет ссоседние клетки (по 
+	горизонталям и вертикалям)
+	'''
 	def super_function(self, I, J, flag=False): 
 		coordinates = []
-		for i in range(I - 1, I + 2):
-			for j in range(J - 1, J + 2):
+		for i in range(-1, +2):
+			for j in range(-1, +2):
 				if flag:
 				#print(i , j )
-					if abs(i - j) % 2 != 1:
-						coordinates.append([i, j])
+					if abs(i - j) % 2 == 1:
+						coordinates.append([I+i,J+j])
 						#print('True')
 				else:
-					coordinates.append([i, j])
+					coordinates.append([I+i,J+j])
 		return(coordinates)
 		
 		
@@ -119,7 +164,7 @@ class Window(object):
 		self.width = width
 		self.screen = curses.initscr()
 		curses.noecho()
-		self.window = curses.newwin(height, width)
+		#self.window = curses.newwin(20, 20)
 		self.pad = curses.newpad(height, width)
 	
 	def draw(self, generator):
@@ -130,14 +175,14 @@ class Window(object):
 					self.pad.addch(x,y, tile)
 				except curses.error:
 					pass
-		self.pad.refresh(0,0, 0,0, self.height, self.width)
+		self.pad.refresh(0,0, 0,0, 20, 75)
 
 
 
 
-
-win = Window(20, 20)
-generator = Generator(win)
+height, width = 24, 24
+win = Window(height, width)
+generator = Generator(height, width)
 
 
 
@@ -149,6 +194,7 @@ o - копаем более хитрым образом: стреляет в м�
 на одну клетку, затем выбирает случайно одну из клеток стены, копает вокруг нее,
 снова выбирает случайную клетку стены... Все равно не обязательно замкнуто, потому
 что если пещера касается края матрицы, то копаие происходит на противоположной стенке.
+v - рост третим способом
 d - нинужная пока функция которая ничего полезного не делает. кроме того, что
 позволяет обойтись без обязательно связных областей - она заменяет некоторые тайлы стены
 на "дверь". Можно попросту удалять стену в этом месте, и тогда области точно станут 
@@ -161,9 +207,9 @@ q - корректный выход
 
 while True:
 
-	c = win.window.getch()
+	c = win.screen.getch()
 	if c == ord('g'):
-		generator = Generator(win)
+		generator = Generator(height, width)
 		win.draw(generator)
 	elif c == ord('q'):
 		curses.endwin()
@@ -172,7 +218,10 @@ while True:
 		generator.growing(1)
 		win.draw(generator)
 	elif c == ord('r'):
-		generator.shooting(10)
+		generator.shooting(0)
+		win.draw(generator)
+	elif c == ord('v'):
+		generator.growing3(10)
 		win.draw(generator)
 	elif c == ord('o'):
 		generator.shooting(0)
@@ -182,8 +231,10 @@ while True:
 	elif c == ord('d'):
 		generator.doors()
 		win.draw(generator)
+	elif c == ord('a'):
+		generator.adjacency()
 	elif c == ord('b'):
-		generator = Generator(win)
+		generator = Generator(height, width)
 		generator.shooting(50)
 		generator.growing(5)
 		win.draw(generator)
